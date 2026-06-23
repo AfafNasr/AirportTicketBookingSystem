@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AirportTicketBookingSystem.Application\AirportTicketBookingSystem.Application.csproj" />
+    <ProjectReference Include="..\AirportTicketBookingSystem.Domain\AirportTicketBookingSystem.Domain.csproj" />
+    <ProjectReference Include="..\AirportTicketBookingSystem.Infrastructure\AirportTicketBookingSystem.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Menus\" />
+    <Folder Include="Input\" />
+    <Folder Include="Session\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+  </ItemGroup>
+
+</Project>
