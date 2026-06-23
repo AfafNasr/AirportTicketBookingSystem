@@ -11,10 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Abstractions\Services\" />
-    <Folder Include="Abstractions\Repositories\" />
     <Folder Include="DTOs\" />
-    <Folder Include="Common\" />
     <Folder Include="Validators\" />
     <Folder Include="Services\" />
   </ItemGroup>
