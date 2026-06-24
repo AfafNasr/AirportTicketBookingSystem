@@ -143,12 +143,34 @@ Console.WriteLine($"Price: {bookingResult.Value.Price}");
 Console.WriteLine();
 Console.WriteLine("My Bookings:");
 
+
+
 var myBookings = await bookingService.GetMyBookingsAsync();
+
+
 
 foreach (var booking in myBookings)
 {
     Console.WriteLine(
         $"{booking.BookingId} | {booking.FlightNumber} | {booking.TravelClass} | {booking.Price} | {booking.Status}");
+}
+
+Console.WriteLine();
+Console.Write("Enter booking id to cancel: ");
+var bookingIdInput = Console.ReadLine();
+
+if (Guid.TryParse(bookingIdInput, out var bookingId))
+{
+    var cancelResult = await bookingService.CancelBookingAsync(bookingId);
+
+    if (cancelResult.IsFailure)
+        Console.WriteLine($"Cancel failed: {cancelResult.Error}");
+    else
+        Console.WriteLine("Booking cancelled successfully.");
+}
+else
+{
+    Console.WriteLine("Invalid booking id.");
 }
 
 Console.ReadKey();

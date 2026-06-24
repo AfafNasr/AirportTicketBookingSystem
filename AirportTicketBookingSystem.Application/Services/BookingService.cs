@@ -100,6 +100,30 @@ namespace AirportTicketBookingSystem.Application.Services
                 .ToList();
         }
 
-        
+        public async Task<Result> CancelBookingAsync(Guid bookingId)
+        {
+            if (!_currentUserService.IsAuthenticated || _currentUserService.UserId is null)
+                return Result.Failure("You must login before cancelling a booking.");
+
+            if (_currentUserService.Role != UserRole.Passenger)
+                return Result.Failure("Only passengers can cancel their bookings.");
+
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+
+            if (booking is null)
+                return Result.Failure("Booking was not found.");
+
+            if (booking.PassengerUserId != _currentUserService.UserId.Value)
+                return Result.Failure("You are not allowed to cancel this booking.");
+
+            if (booking.Status == BookingStatus.Cancelled)
+                return Result.Failure("Booking is already cancelled.");
+
+            booking.Cancel();
+
+            await _bookingRepository.UpdateAsync(booking);
+
+            return Result.Success();
+        }
     }
 }
