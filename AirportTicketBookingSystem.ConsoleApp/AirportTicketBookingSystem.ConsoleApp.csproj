@@ -16,7 +16,6 @@
   <ItemGroup>
     <Folder Include="Menus\" />
     <Folder Include="Input\" />
-    <Folder Include="Session\" />
   </ItemGroup>
 
   <ItemGroup>
