@@ -122,5 +122,23 @@ namespace AirportTicketBookingSystem.Domain.Entities
                 _ => throw new ArgumentOutOfRangeException(nameof(travelClass))
             };
         }
+
+        public void ReleaseSeat(TravelClass travelClass)
+        {
+            switch (travelClass)
+            {
+                case TravelClass.Economy:
+                    EconomySeats++;
+                    break;
+                case TravelClass.Business:
+                    BusinessSeats++;
+                    break;
+                case TravelClass.FirstClass:
+                    FirstClassSeats++;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(travelClass));
+            }
+        }
     }
 }

@@ -125,5 +125,81 @@ namespace AirportTicketBookingSystem.Application.Services
 
             return Result.Success();
         }
+
+        public async Task<Result> ModifyBookingAsync(ModifyBookingRequest request)
+        {
+            if (!_currentUserService.IsAuthenticated || _currentUserService.UserId is null)
+                return Result.Failure("You must login before modifying a booking.");
+
+            if (_currentUserService.Role != UserRole.Passenger)
+                return Result.Failure("Only passengers can modify their bookings.");
+
+            var booking = await _bookingRepository.GetByIdAsync(request.BookingId);
+
+            if (booking is null)
+                return Result.Failure("Booking was not found.");
+
+            if (booking.PassengerUserId != _currentUserService.UserId.Value)
+                return Result.Failure("You are not allowed to modify this booking.");
+
+            if (booking.Status == BookingStatus.Cancelled)
+                return Result.Failure("Cancelled bookings cannot be modified.");
+
+            var oldFlight = await _flightRepository.GetByIdAsync(booking.FlightId);
+
+            if (oldFlight is null)
+                return Result.Failure("Original flight was not found.");
+
+            var newFlight = await _flightRepository.GetByIdAsync(request.NewFlightId);
+
+            if (newFlight is null)
+                return Result.Failure("New flight was not found.");
+
+            if (newFlight.DepartureDate <= DateTime.Now)
+                return Result.Failure("Cannot change booking to a departed flight.");
+
+            var isSameFlight = oldFlight.Id == newFlight.Id;
+            var isSameClass = booking.TravelClass == request.NewTravelClass;
+
+            if (isSameFlight && isSameClass)
+                return Result.Failure("No changes were made.");
+
+            if (isSameFlight)
+            {
+                oldFlight.ReleaseSeat(booking.TravelClass);
+
+                if (!oldFlight.HasAvailableSeat(request.NewTravelClass))
+                {
+                    oldFlight.ReserveSeat(booking.TravelClass);
+                    return Result.Failure("No available seats for the selected class.");
+                }
+
+                oldFlight.ReserveSeat(request.NewTravelClass);
+
+                await _flightRepository.UpdateAsync(oldFlight);
+            }
+            else
+            {
+                if (!newFlight.HasAvailableSeat(request.NewTravelClass))
+                    return Result.Failure("No available seats for the selected class.");
+
+                oldFlight.ReleaseSeat(booking.TravelClass);
+                newFlight.ReserveSeat(request.NewTravelClass);
+
+                await _flightRepository.UpdateAsync(oldFlight);
+                await _flightRepository.UpdateAsync(newFlight);
+            }
+
+            var newPrice = newFlight.GetPrice(request.NewTravelClass);
+
+            booking.Modify(
+                newFlight.Id,
+                request.NewTravelClass,
+                newPrice);
+
+            await _bookingRepository.UpdateAsync(booking);
+
+            return Result.Success();
+        }
     }
 }

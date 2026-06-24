@@ -34,5 +34,15 @@ namespace AirportTicketBookingSystem.Domain.Entities
         {
             Status = BookingStatus.Cancelled;
         }
+
+        public void Modify(Guid newFlightId, TravelClass newTravelClass, decimal newPrice)
+        {
+            if (Status == BookingStatus.Cancelled)
+                throw new InvalidOperationException("Cancelled bookings cannot be modified.");
+
+            FlightId = newFlightId;
+            TravelClass = newTravelClass;
+            Price = newPrice;
+        }
     }
 }
