@@ -6,6 +6,6 @@ namespace AirportTicketBookingSystem.Domain.Common
 {
     public abstract class Entity
     {
-        public Guid Id { get; protected set; } = Guid.NewGuid();
+        public Guid Id { get;  set; } = Guid.NewGuid();
     }
 }

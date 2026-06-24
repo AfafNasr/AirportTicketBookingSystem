@@ -82,5 +82,45 @@ namespace AirportTicketBookingSystem.Domain.Entities
                 _ => throw new ArgumentOutOfRangeException(nameof(travelClass))
             };
         }
+
+        public bool HasAvailableSeat(TravelClass travelClass)
+        {
+            return GetAvailableSeats(travelClass) > 0;
+        }
+
+        public void ReserveSeat(TravelClass travelClass)
+        {
+            if (!HasAvailableSeat(travelClass))
+                throw new InvalidOperationException("No available seats for the selected class.");
+
+            switch (travelClass)
+            {
+                case TravelClass.Economy:
+                    EconomySeats--;
+                    break;
+
+                case TravelClass.Business:
+                    BusinessSeats--;
+                    break;
+
+                case TravelClass.FirstClass:
+                    FirstClassSeats--;
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(travelClass));
+            }
+        }
+
+        public int GetAvailableSeats(TravelClass travelClass)
+        {
+            return travelClass switch
+            {
+                TravelClass.Economy => EconomySeats,
+                TravelClass.Business => BusinessSeats,
+                TravelClass.FirstClass => FirstClassSeats,
+                _ => throw new ArgumentOutOfRangeException(nameof(travelClass))
+            };
+        }
     }
 }
