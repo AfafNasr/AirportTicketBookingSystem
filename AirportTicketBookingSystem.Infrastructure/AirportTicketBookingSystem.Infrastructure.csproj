@@ -14,7 +14,6 @@
   <ItemGroup>
     <Folder Include="Csv\" />
     <Folder Include="Seed\" />
-    <Folder Include="Security\" />
   </ItemGroup>
 
   <ItemGroup>
