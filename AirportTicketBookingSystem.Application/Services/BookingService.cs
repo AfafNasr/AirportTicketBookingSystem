@@ -9,6 +9,7 @@ using AirportTicketBookingSystem.Application.DTOs.Bookings;
 using AirportTicketBookingSystem.Domain.Entities;
 using AirportTicketBookingSystem.Domain.Enums;
 
+
 namespace AirportTicketBookingSystem.Application.Services
 {
     public sealed class BookingService
@@ -16,14 +17,17 @@ namespace AirportTicketBookingSystem.Application.Services
         private readonly IBookingRepository _bookingRepository;
         private readonly IFlightRepository _flightRepository;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IUserRepository _userRepository;
 
         public BookingService(
             IBookingRepository bookingRepository,
             IFlightRepository flightRepository,
+             IUserRepository userRepository,
             ICurrentUserService currentUserService)
         {
             _bookingRepository = bookingRepository;
             _flightRepository = flightRepository;
+            _userRepository = userRepository;
             _currentUserService = currentUserService;
         }
 
@@ -119,6 +123,15 @@ namespace AirportTicketBookingSystem.Application.Services
             if (booking.Status == BookingStatus.Cancelled)
                 return Result.Failure("Booking is already cancelled.");
 
+            var flight = await _flightRepository.GetByIdAsync(booking.FlightId);
+
+            if (flight is null)
+                return Result.Failure("Flight was not found.");
+
+            flight.ReleaseSeat(booking.TravelClass);
+
+            await _flightRepository.UpdateAsync(flight);
+
             booking.Cancel();
 
             await _bookingRepository.UpdateAsync(booking);
@@ -200,6 +213,118 @@ namespace AirportTicketBookingSystem.Application.Services
             await _bookingRepository.UpdateAsync(booking);
 
             return Result.Success();
+        }
+
+        public async Task<IReadOnlyList<ManagerBookingResult>> FilterBookingsAsync(
+    BookingFilterRequest request)
+        {
+            if (!_currentUserService.IsAuthenticated ||
+                _currentUserService.Role != UserRole.Manager)
+            {
+                return [];
+            }
+
+            var bookings = await _bookingRepository.GetAllAsync();
+            var flights = await _flightRepository.GetAllAsync();
+            var users = await _userRepository.GetAllAsync();
+
+            var query =
+                from booking in bookings
+                join flight in flights on booking.FlightId equals flight.Id
+                join user in users on booking.PassengerUserId equals user.Id
+                select new
+                {
+                    Booking = booking,
+                    Flight = flight,
+                    Passenger = user
+                };
+
+            if (!string.IsNullOrWhiteSpace(request.FlightNumber))
+            {
+                query = query.Where(item =>
+                    item.Flight.FlightNumber.Contains(
+                        request.FlightNumber.Trim(),
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (request.MaxPrice.HasValue)
+            {
+                query = query.Where(item =>
+                    item.Booking.Price <= request.MaxPrice.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.DepartureCountry))
+            {
+                query = query.Where(item =>
+                    item.Flight.DepartureCountry.Contains(
+                        request.DepartureCountry.Trim(),
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.DestinationCountry))
+            {
+                query = query.Where(item =>
+                    item.Flight.DestinationCountry.Contains(
+                        request.DestinationCountry.Trim(),
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (request.DepartureDate.HasValue)
+            {
+                query = query.Where(item =>
+                    item.Flight.DepartureDate.Date ==
+                    request.DepartureDate.Value.Date);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.DepartureAirport))
+            {
+                query = query.Where(item =>
+                    item.Flight.DepartureAirport.Contains(
+                        request.DepartureAirport.Trim(),
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.ArrivalAirport))
+            {
+                query = query.Where(item =>
+                    item.Flight.ArrivalAirport.Contains(
+                        request.ArrivalAirport.Trim(),
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.PassengerEmail))
+            {
+                query = query.Where(item =>
+                    item.Passenger.Email.Contains(
+                        request.PassengerEmail.Trim(),
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (request.TravelClass.HasValue)
+            {
+                query = query.Where(item =>
+                    item.Booking.TravelClass == request.TravelClass.Value);
+            }
+
+            return query
+                .Select(item => new ManagerBookingResult
+                {
+                    BookingId = item.Booking.Id,
+                    PassengerName = item.Passenger.FullName,
+                    PassengerEmail = item.Passenger.Email,
+                    FlightNumber = item.Flight.FlightNumber,
+                    Price = item.Booking.Price,
+                    DepartureCountry = item.Flight.DepartureCountry,
+                    DestinationCountry = item.Flight.DestinationCountry,
+                    DepartureDate = item.Flight.DepartureDate,
+                    DepartureAirport = item.Flight.DepartureAirport,
+                    ArrivalAirport = item.Flight.ArrivalAirport,
+                    TravelClass = item.Booking.TravelClass,
+                    Status = item.Booking.Status
+                })
+                .OrderBy(result => result.DepartureDate)
+                .ThenBy(result => result.FlightNumber)
+                .ToList();
         }
     }
 }

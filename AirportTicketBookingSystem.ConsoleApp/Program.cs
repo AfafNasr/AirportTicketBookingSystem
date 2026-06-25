@@ -117,6 +117,7 @@ var selectedFlight = availableFlights[selectedNumber - 1];
 var bookingService = new BookingService(
     bookingRepository,
     flightRepository,
+    userRepository,
     currentUserService);
 
 var bookingResult = await bookingService.BookFlightAsync(
