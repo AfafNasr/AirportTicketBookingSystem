@@ -16,6 +16,7 @@ namespace AirportTicketBookingSystem.Domain.Entities
         public DateTime DepartureDate { get; private set; }
         public DateTime ArrivalDate { get; private set; }
 
+  
         public decimal EconomyPrice { get; private set; }
         public decimal BusinessPrice { get; private set; }
         public decimal FirstClassPrice { get; private set; }
