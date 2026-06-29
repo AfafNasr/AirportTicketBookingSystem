@@ -6,6 +6,7 @@ using AirportTicketBookingSystem.Infrastructure.Persistence;
 using AirportTicketBookingSystem.Infrastructure.Security;
 using AirportTicketBookingSystem.Infrastructure.Seed;
 
+
 Console.OutputEncoding = Encoding.UTF8;
 Console.Title = "Airport Ticket Booking System";
 

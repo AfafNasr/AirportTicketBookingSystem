@@ -1,292 +1,886 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-using AirportTicketBookingSystem.Application.DTOs.Bookings;
+﻿using AirportTicketBookingSystem.Application.DTOs.Bookings;
 using AirportTicketBookingSystem.Application.DTOs.Flights;
 using AirportTicketBookingSystem.Application.Services;
 using AirportTicketBookingSystem.ConsoleApp.Input;
+using AirportTicketBookingSystem.Domain.Enums;
 
-namespace AirportTicketBookingSystem.ConsoleApp.Menus
+namespace AirportTicketBookingSystem.ConsoleApp.Menus;
+
+public sealed class PassengerMenu
 {
-    public sealed class PassengerMenu
+    private readonly FlightService _flightService;
+    private readonly BookingService _bookingService;
+    private readonly AuthService _authService;
+
+    private sealed record FlightGroup(
+    Guid FlightId,
+    string FlightNumber,
+    string DepartureCountry,
+    string DestinationCountry,
+    string DepartureAirport,
+    string ArrivalAirport,
+    DateTime DepartureDate,
+    DateTime ArrivalDate,
+    IReadOnlyList<FlightSearchResult> ClassOptions);
+
+    public PassengerMenu(
+        FlightService flightService,
+        BookingService bookingService,
+        AuthService authService)
     {
-        private readonly FlightService _flightService;
-        private readonly BookingService _bookingService;
-        private readonly AuthService _authService;
+        _flightService = flightService;
+        _bookingService = bookingService;
+        _authService = authService;
+    }
 
-        public PassengerMenu(
-            FlightService flightService,
-            BookingService bookingService,
-            AuthService authService)
+    public async Task ShowAsync()
+    {
+        while (true)
         {
-            _flightService = flightService;
-            _bookingService = bookingService;
-            _authService = authService;
+            ConsoleUi.Header("PASSENGER MENU");
+
+            Console.WriteLine("1. View All Available Flights");
+            Console.WriteLine("2. Search & Book Flight");
+            Console.WriteLine("3. View My Bookings");
+            Console.WriteLine("4. Cancel Booking");
+            Console.WriteLine("5. Modify Booking");
+            Console.WriteLine("6. Logout");
+            Console.WriteLine();
+
+            var choice = ConsoleUi.Prompt("Choose option");
+
+            switch (choice)
+            {
+                case "1":
+                    await ViewAllAvailableFlightsAsync();
+                    break;
+
+                case "2":
+                    await SearchAndBookFlightAsync();
+                    break;
+
+                case "3":
+                    await ViewMyBookingsAsync();
+                    break;
+
+                case "4":
+                    await CancelBookingAsync();
+                    break;
+
+                case "5":
+                    await ModifyBookingAsync();
+                    break;
+
+                case "6":
+                    _authService.Logout();
+                    return;
+
+                default:
+                    ConsoleUi.Error("Invalid option.");
+                    ConsoleUi.Pause();
+                    break;
+            }
+        }
+    }
+
+    private async Task ViewAllAvailableFlightsAsync()
+    {
+        ConsoleUi.Header("ALL AVAILABLE FLIGHTS");
+
+        var flights = await _flightService.SearchAvailableFlightsAsync(
+            new FlightSearchRequest());
+
+        PrintFlights(flights);
+
+        if (flights.Count == 0)
+        {
+            ConsoleUi.Pause();
+            return;
         }
 
-        public async Task ShowAsync()
-        {
-            while (true)
-            {
-                ConsoleUi.Header("PASSENGER MENU");
+        var answer = ConsoleUi.Prompt("Do you want to book one of these flights? (Y/N)");
 
-                Console.WriteLine("1. Search Available Flights");
-                Console.WriteLine("2. Book Flight");
-                Console.WriteLine("3. View My Bookings");
-                Console.WriteLine("4. Cancel Booking");
-                Console.WriteLine("5. Modify Booking");
-                Console.WriteLine("6. Logout");
+        if (!answer.Equals("Y", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        await BookSelectedFlightAsync(flights);
+    }
+
+    private async Task SearchAndBookFlightAsync()
+    {
+        ConsoleUi.Header("SEARCH & BOOK FLIGHT");
+
+        var flights = await SearchFlightsWithoutPauseAsync();
+
+        if (flights.Count == 0)
+        {
+            ConsoleUi.Error("No available flights found.");
+            ConsoleUi.Pause();
+            return;
+        }
+
+        await BookSelectedFlightAsync(flights);
+    }
+
+    private async Task<IReadOnlyList<FlightSearchResult>> SearchFlightsWithoutPauseAsync()
+    {
+        ConsoleUi.Section("Guided Search");
+
+        var allFlights = await _flightService.SearchAvailableFlightsAsync(new FlightSearchRequest());
+
+        if (allFlights.Count == 0)
+        {
+            ConsoleUi.Info("No flights are available in the system.");
+            return [];
+        }
+
+        var departureCountry = ChooseChipOption(
+            "Departure Country",
+            allFlights
+                .Select(f => f.DepartureCountry)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x)
+                .ToList());
+
+        var destinationCountry = ChooseChipOption(
+            "Destination Country",
+            allFlights
+                .Where(f => IsEmptyOrEqual(departureCountry, f.DepartureCountry))
+                .Select(f => f.DestinationCountry)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x)
+                .ToList());
+
+        var departureDateText = ChooseChipOption(
+            "Departure Date",
+            allFlights
+                .Where(f =>
+                    IsEmptyOrEqual(departureCountry, f.DepartureCountry) &&
+                    IsEmptyOrEqual(destinationCountry, f.DestinationCountry))
+                .Select(f => f.DepartureDate.ToString("yyyy-MM-dd"))
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList());
+
+        DateTime? departureDate = string.IsNullOrWhiteSpace(departureDateText)
+            ? null
+            : DateTime.Parse(departureDateText);
+
+        var departureAirport = ChooseChipOption(
+            "Departure Airport",
+            allFlights
+                .Where(f =>
+                    IsEmptyOrEqual(departureCountry, f.DepartureCountry) &&
+                    IsEmptyOrEqual(destinationCountry, f.DestinationCountry) &&
+                    (!departureDate.HasValue || f.DepartureDate.Date == departureDate.Value.Date))
+                .Select(f => f.DepartureAirport)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x)
+                .ToList());
+
+        var arrivalAirport = ChooseChipOption(
+            "Arrival Airport",
+            allFlights
+                .Where(f =>
+                    IsEmptyOrEqual(departureCountry, f.DepartureCountry) &&
+                    IsEmptyOrEqual(destinationCountry, f.DestinationCountry) &&
+                    (!departureDate.HasValue || f.DepartureDate.Date == departureDate.Value.Date) &&
+                    IsEmptyOrEqual(departureAirport, f.DepartureAirport))
+                .Select(f => f.ArrivalAirport)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x)
+                .ToList());
+
+        var travelClassText = ChooseChipOption(
+            "Travel Class",
+            ["Economy", "Business", "FirstClass"]);
+
+        var travelClass = travelClassText switch
+        {
+            "Economy" => TravelClass.Economy,
+            "Business" => TravelClass.Business,
+            "FirstClass" => TravelClass.FirstClass,
+            _ => (TravelClass?)null
+        };
+
+        var maxPrice = ConsoleParsers.ReadNullableDecimal("Max Price (leave empty for any)");
+
+        var request = new FlightSearchRequest
+        {
+            DepartureCountry = departureCountry,
+            DestinationCountry = destinationCountry,
+            DepartureDate = departureDate,
+            DepartureAirport = departureAirport,
+            ArrivalAirport = arrivalAirport,
+            TravelClass = travelClass,
+            MaxPrice = maxPrice
+        };
+
+        var flights = await _flightService.SearchAvailableFlightsAsync(request);
+
+        PrintFlights(flights);
+
+        return flights;
+    }
+
+    private static string? ChooseChipOption(string title, IReadOnlyList<string> options)
+    {
+        ConsoleUi.Section(title);
+
+        if (options.Count == 0)
+        {
+            ConsoleUi.Info("No options available.");
+            return null;
+        }
+
+        Console.ForegroundColor = ConsoleColor.DarkGray;
+        Console.WriteLine("Leave empty for Any / Skip");
+        Console.ResetColor();
+
+        PrintChips(options);
+
+        while (true)
+        {
+            var input = ConsoleUi.Prompt("Selection").Trim();
+
+            if (string.IsNullOrWhiteSpace(input))
+                return null;
+
+            var selected = options.FirstOrDefault(option =>
+                option.Equals(input, StringComparison.OrdinalIgnoreCase));
+
+            if (selected is not null)
+                return selected;
+
+            ConsoleUi.Error("Invalid selection. Please type one of the displayed options exactly.");
+        }
+    }
+
+    private static void PrintChips(IReadOnlyList<string> options)
+    {
+        const int maxLineWidth = 85;
+        var currentLineLength = 0;
+
+        Console.WriteLine();
+
+        foreach (var option in options)
+        {
+            var chip = $"[ {option} ] ";
+
+            if (currentLineLength + chip.Length > maxLineWidth)
+            {
                 Console.WriteLine();
-
-                var choice = ConsoleUi.Prompt("Choose option");
-
-                switch (choice)
-                {
-                    case "1":
-                        await SearchFlightsAsync();
-                        break;
-
-                    case "2":
-                        await BookFlightAsync();
-                        break;
-
-                    case "3":
-                        await ViewMyBookingsAsync();
-                        break;
-
-                    case "4":
-                        await CancelBookingAsync();
-                        break;
-
-                    case "5":
-                        await ModifyBookingAsync();
-                        break;
-
-                    case "6":
-                        _authService.Logout();
-                        return;
-
-                    default:
-                        ConsoleUi.Error("Invalid option.");
-                        ConsoleUi.Pause();
-                        break;
-                }
+                currentLineLength = 0;
             }
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write(chip);
+            Console.ResetColor();
+
+            currentLineLength += chip.Length;
         }
 
-        private async Task<IReadOnlyList<FlightSearchResult>> SearchFlightsAsync()
-        {
-            ConsoleUi.Header("SEARCH AVAILABLE FLIGHTS");
+        Console.WriteLine();
+        Console.WriteLine();
+    }
 
-            var request = new FlightSearchRequest
+    private static bool IsEmptyOrEqual(string? selectedValue, string actualValue)
+    {
+        return string.IsNullOrWhiteSpace(selectedValue) ||
+               actualValue.Equals(selectedValue, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? ChooseFromList(string title, IReadOnlyList<string> options)
+    {
+        ConsoleUi.Section(title);
+
+        if (options.Count == 0)
+        {
+            ConsoleUi.Info("No options available.");
+            return null;
+        }
+
+        Console.WriteLine("0. Any / Skip");
+
+        for (var i = 0; i < options.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {options[i]}");
+        }
+
+        while (true)
+        {
+            var input = ConsoleUi.Prompt($"Choose {title}");
+
+            if (string.IsNullOrWhiteSpace(input) || input == "0")
+                return null;
+
+            if (int.TryParse(input, out var selectedIndex) &&
+                selectedIndex >= 1 &&
+                selectedIndex <= options.Count)
             {
-                MaxPrice = ConsoleParsers.ReadNullableDecimal("Max Price"),
-                DepartureCountry = ConsoleUi.Prompt("Departure Country"),
-                DestinationCountry = ConsoleUi.Prompt("Destination Country"),
-                DepartureDate = ConsoleParsers.ReadNullableDate("Departure Date"),
-                DepartureAirport = ConsoleUi.Prompt("Departure Airport"),
-                ArrivalAirport = ConsoleUi.Prompt("Arrival Airport"),
-                TravelClass = ConsoleParsers.ReadNullableTravelClass()
+                return options[selectedIndex - 1];
+            }
+
+            ConsoleUi.Error("Invalid selection. Please choose a valid option.");
+        }
+    }
+
+    private static DateTime? ChooseDateFromList(string title, IReadOnlyList<DateTime> dates)
+    {
+        ConsoleUi.Section(title);
+
+        if (dates.Count == 0)
+        {
+            ConsoleUi.Info("No dates available.");
+            return null;
+        }
+
+        Console.WriteLine("0. Any / Skip");
+
+        for (var i = 0; i < dates.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {dates[i]:yyyy-MM-dd}");
+        }
+
+        while (true)
+        {
+            var input = ConsoleUi.Prompt($"Choose {title}");
+
+            if (string.IsNullOrWhiteSpace(input) || input == "0")
+                return null;
+
+            if (int.TryParse(input, out var selectedIndex) &&
+                selectedIndex >= 1 &&
+                selectedIndex <= dates.Count)
+            {
+                return dates[selectedIndex - 1];
+            }
+
+            ConsoleUi.Error("Invalid selection. Please choose a valid date option.");
+        }
+    }
+
+    private static TravelClass? ChooseTravelClass()
+    {
+        ConsoleUi.Section("Travel Class");
+
+        Console.WriteLine("0. Any / Skip");
+        Console.WriteLine("1. Economy");
+        Console.WriteLine("2. Business");
+        Console.WriteLine("3. First Class");
+
+        while (true)
+        {
+            var input = ConsoleUi.Prompt("Choose Travel Class");
+
+            return input switch
+            {
+                "" or "0" => null,
+                "1" => TravelClass.Economy,
+                "2" => TravelClass.Business,
+                "3" => TravelClass.FirstClass,
+                _ => ShowInvalidClassSelection()
             };
+        }
+    }
 
-            var flights = await _flightService.SearchAvailableFlightsAsync(request);
+    private static TravelClass? ShowInvalidClassSelection()
+    {
+        ConsoleUi.Error("Invalid class selection.");
+        return ChooseTravelClass();
+    }
 
-            PrintFlights(flights);
+    private async Task BookSelectedFlightAsync(IReadOnlyList<FlightSearchResult> flights)
+    {
+        var groupedFlights = GroupFlights(flights);
 
+        var flightInput = ConsoleUi.Prompt("Enter option number to book");
+
+        if (!int.TryParse(flightInput, out var flightIndex) ||
+            flightIndex < 1 ||
+            flightIndex > groupedFlights.Count)
+        {
+            ConsoleUi.Error("Invalid flight selection.");
             ConsoleUi.Pause();
-            return flights;
+            return;
         }
 
-        private async Task BookFlightAsync()
+        var selectedFlight = groupedFlights[flightIndex - 1];
+
+        ConsoleUi.Section("Choose Class");
+
+        for (var i = 0; i < selectedFlight.ClassOptions.Count; i++)
         {
-            ConsoleUi.Header("BOOK FLIGHT");
+            var option = selectedFlight.ClassOptions[i];
+            Console.WriteLine($"{i + 1}. {option.TravelClass,-10} | Price: {option.Price} | Seats: {option.AvailableSeats}");
+        }
 
-            var flights = await SearchFlightsWithoutPauseAsync();
+        var classInput = ConsoleUi.Prompt("Select class number");
 
-            if (flights.Count == 0)
+        if (!int.TryParse(classInput, out var classIndex) ||
+            classIndex < 1 ||
+            classIndex > selectedFlight.ClassOptions.Count)
+        {
+            ConsoleUi.Error("Invalid class selection.");
+            ConsoleUi.Pause();
+            return;
+        }
+
+        var selectedOption = selectedFlight.ClassOptions[classIndex - 1];
+
+        ConsoleUi.Section("Booking Confirmation");
+
+        Console.WriteLine($"Flight    : {selectedOption.FlightNumber}");
+        Console.WriteLine($"Route     : {selectedOption.DepartureCountry} -> {selectedOption.DestinationCountry}");
+        Console.WriteLine($"Departure : {selectedOption.DepartureDate:yyyy-MM-dd HH:mm}");
+        Console.WriteLine($"Arrival   : {selectedOption.ArrivalDate:yyyy-MM-dd HH:mm}");
+        Console.WriteLine($"Class     : {selectedOption.TravelClass}");
+        Console.WriteLine($"Price     : {selectedOption.Price}");
+        Console.WriteLine($"Seats     : {selectedOption.AvailableSeats}");
+
+        var confirm = ConsoleUi.Prompt("Confirm booking? (Y/N)");
+
+        if (!confirm.Equals("Y", StringComparison.OrdinalIgnoreCase))
+        {
+            ConsoleUi.Info("Booking cancelled.");
+            ConsoleUi.Pause();
+            return;
+        }
+
+        var result = await _bookingService.BookFlightAsync(new BookFlightRequest
+        {
+            FlightId = selectedOption.FlightId,
+            TravelClass = selectedOption.TravelClass
+        });
+
+        if (result.IsFailure)
+            ConsoleUi.Error(result.Error);
+        else
+            ConsoleUi.Success($"Booking completed successfully. Booking ID: {result.Value!.BookingId}");
+
+        ConsoleUi.Pause();
+    }
+
+    private async Task ViewMyBookingsAsync()
+    {
+        ConsoleUi.Header("MY BOOKINGS");
+
+        var bookings = await _bookingService.GetMyBookingsAsync();
+
+        PrintBookings(bookings);
+
+        ConsoleUi.Pause();
+    }
+
+    private async Task CancelBookingAsync()
+    {
+        ConsoleUi.Header("CANCEL BOOKING");
+
+        var bookings = (await _bookingService.GetMyBookingsAsync())
+       .Where(booking => booking.Status == BookingStatus.Active)
+       .ToList();
+
+        PrintBookings(bookings);
+
+        if (bookings.Count == 0)
+        {
+            ConsoleUi.Pause();
+            return;
+        }
+
+        var input = ConsoleUi.Prompt("Select booking number to cancel");
+
+        if (!int.TryParse(input, out var selectedIndex) ||
+            selectedIndex < 1 ||
+            selectedIndex > bookings.Count)
+        {
+            ConsoleUi.Error("Invalid booking selection.");
+            ConsoleUi.Pause();
+            return;
+        }
+
+        var bookingId = bookings[selectedIndex - 1].BookingId;
+
+        var result = await _bookingService.CancelBookingAsync(bookingId);
+
+        if (result.IsFailure)
+            ConsoleUi.Error(result.Error);
+        else
+            ConsoleUi.Success("Booking cancelled successfully.");
+
+        ConsoleUi.Pause();
+    }
+
+    private async Task ModifyBookingAsync()
+    {
+        ConsoleUi.Header("MODIFY BOOKING");
+
+        var bookings = (await _bookingService.GetMyBookingsAsync())
+           .Where(booking => booking.Status == BookingStatus.Active)
+           .ToList();
+
+        PrintBookings(bookings);
+
+        if (bookings.Count == 0)
+        {
+            ConsoleUi.Pause();
+            return;
+        }
+
+        var bookingInput = ConsoleUi.Prompt("Select booking number to modify");
+
+        if (!int.TryParse(bookingInput, out var selectedBookingIndex) ||
+            selectedBookingIndex < 1 ||
+            selectedBookingIndex > bookings.Count)
+        {
+            ConsoleUi.Error("Invalid booking selection.");
+            ConsoleUi.Pause();
+            return;
+        }
+
+        var selectedBooking = bookings[selectedBookingIndex - 1];
+
+        ConsoleUi.Section("Modification Type");
+        Console.WriteLine("1. Change Class only");
+        Console.WriteLine("2. Change Flight and Class");
+        Console.WriteLine("0. Back");
+
+        var choice = ConsoleUi.Prompt("Choose option");
+
+        if (choice == "0")
+            return;
+
+        if (choice == "1")
+        {
+            await ModifyBookingClassOnlyAsync(selectedBooking);
+            return;
+        }
+
+        if (choice == "2")
+        {
+            await ModifyBookingFlightAndClassAsync(selectedBooking);
+            return;
+        }
+
+        ConsoleUi.Error("Invalid option.");
+        ConsoleUi.Pause();
+    }
+
+    private async Task ModifyBookingClassOnlyAsync(BookingResponse selectedBooking)
+    {
+        ConsoleUi.Section("Choose New Class");
+
+        var flights = await _flightService.SearchAvailableFlightsAsync(
+            new FlightSearchRequest
             {
-                ConsoleUi.Error("No available flights found.");
-                ConsoleUi.Pause();
-                return;
-            }
-
-            var indexInput = ConsoleUi.Prompt("Select flight number");
-            if (!int.TryParse(indexInput, out var index) || index < 1 || index > flights.Count)
-            {
-                ConsoleUi.Error("Invalid flight selection.");
-                ConsoleUi.Pause();
-                return;
-            }
-
-            var selectedFlight = flights[index - 1];
-
-            var result = await _bookingService.BookFlightAsync(new BookFlightRequest
-            {
-                FlightId = selectedFlight.FlightId,
-                TravelClass = selectedFlight.TravelClass
+                DepartureCountry = selectedBooking.DepartureCountry,
+                DestinationCountry = selectedBooking.DestinationCountry,
+                DepartureDate = selectedBooking.DepartureDate,
+                DepartureAirport = selectedBooking.DepartureAirport,
+                ArrivalAirport = selectedBooking.ArrivalAirport
             });
 
-            if (result.IsFailure)
-                ConsoleUi.Error(result.Error);
-            else
-                ConsoleUi.Success($"Booking completed. Booking ID: {result.Value!.BookingId}");
+        var sameFlightOptions = flights
+            .Where(flight => flight.FlightId == selectedBooking.FlightId)
+            .OrderBy(flight => flight.TravelClass)
+            .ToList();
 
+        if (sameFlightOptions.Count == 0)
+        {
+            ConsoleUi.Error("No class options found for this flight.");
             ConsoleUi.Pause();
+            return;
         }
 
-        private async Task<IReadOnlyList<FlightSearchResult>> SearchFlightsWithoutPauseAsync()
+        for (var i = 0; i < sameFlightOptions.Count; i++)
         {
-            ConsoleUi.Section("Search Filters");
+            var option = sameFlightOptions[i];
 
-            var request = new FlightSearchRequest
-            {
-                MaxPrice = ConsoleParsers.ReadNullableDecimal("Max Price"),
-                DepartureCountry = ConsoleUi.Prompt("Departure Country"),
-                DestinationCountry = ConsoleUi.Prompt("Destination Country"),
-                DepartureDate = ConsoleParsers.ReadNullableDate("Departure Date"),
-                DepartureAirport = ConsoleUi.Prompt("Departure Airport"),
-                ArrivalAirport = ConsoleUi.Prompt("Arrival Airport"),
-                TravelClass = ConsoleParsers.ReadNullableTravelClass()
-            };
-
-            var flights = await _flightService.SearchAvailableFlightsAsync(request);
-            PrintFlights(flights);
-
-            return flights;
+            Console.WriteLine(
+                $"{i + 1}. {option.TravelClass,-10} | Price: {option.Price,-8} | Seats: {option.AvailableSeats}");
         }
 
-        private async Task ViewMyBookingsAsync()
+        var input = ConsoleUi.Prompt("Select new class");
+
+        if (!int.TryParse(input, out var selectedClassIndex) ||
+            selectedClassIndex < 1 ||
+            selectedClassIndex > sameFlightOptions.Count)
         {
-            ConsoleUi.Header("MY BOOKINGS");
-
-            var bookings = await _bookingService.GetMyBookingsAsync();
-
-            if (bookings.Count == 0)
-            {
-                ConsoleUi.Info("You have no bookings.");
-                ConsoleUi.Pause();
-                return;
-            }
-
-            foreach (var booking in bookings)
-            {
-                Console.WriteLine($"{booking.BookingId} | {booking.FlightNumber} | {booking.TravelClass} | {booking.Price} | {booking.Status}");
-            }
-
+            ConsoleUi.Error("Invalid class selection.");
             ConsoleUi.Pause();
+            return;
         }
 
-        private async Task CancelBookingAsync()
+        var selectedOption = sameFlightOptions[selectedClassIndex - 1];
+
+        if (selectedOption.TravelClass == selectedBooking.TravelClass)
         {
-            ConsoleUi.Header("CANCEL BOOKING");
-
-            await ViewMyBookingsShortAsync();
-
-            var input = ConsoleUi.Prompt("Booking ID");
-
-            if (!Guid.TryParse(input, out var bookingId))
-            {
-                ConsoleUi.Error("Invalid booking ID.");
-                ConsoleUi.Pause();
-                return;
-            }
-
-            var result = await _bookingService.CancelBookingAsync(bookingId);
-
-            if (result.IsFailure)
-                ConsoleUi.Error(result.Error);
-            else
-                ConsoleUi.Success("Booking cancelled successfully.");
-
+            ConsoleUi.Error("You selected the same class. No changes were made.");
             ConsoleUi.Pause();
+            return;
         }
 
-        private async Task ModifyBookingAsync()
+        ConsoleUi.Section("Modification Confirmation");
+        Console.WriteLine($"Flight       : {selectedBooking.FlightNumber}");
+        Console.WriteLine($"Route        : {selectedBooking.DepartureCountry} -> {selectedBooking.DestinationCountry}");
+        Console.WriteLine($"Old Class    : {selectedBooking.TravelClass}");
+        Console.WriteLine($"New Class    : {selectedOption.TravelClass}");
+        Console.WriteLine($"New Price    : {selectedOption.Price}");
+
+        var confirm = ConsoleUi.Prompt("Confirm modification? (Y/N)");
+
+        if (!confirm.Equals("Y", StringComparison.OrdinalIgnoreCase))
         {
-            ConsoleUi.Header("MODIFY BOOKING");
-
-            await ViewMyBookingsShortAsync();
-
-            var bookingInput = ConsoleUi.Prompt("Booking ID to modify");
-
-            if (!Guid.TryParse(bookingInput, out var bookingId))
-            {
-                ConsoleUi.Error("Invalid booking ID.");
-                ConsoleUi.Pause();
-                return;
-            }
-
-            ConsoleUi.Section("Choose New Flight");
-            var flights = await SearchFlightsWithoutPauseAsync();
-
-            if (flights.Count == 0)
-            {
-                ConsoleUi.Error("No flights found.");
-                ConsoleUi.Pause();
-                return;
-            }
-
-            var indexInput = ConsoleUi.Prompt("Select new flight number");
-
-            if (!int.TryParse(indexInput, out var index) || index < 1 || index > flights.Count)
-            {
-                ConsoleUi.Error("Invalid flight selection.");
-                ConsoleUi.Pause();
-                return;
-            }
-
-            var selectedFlight = flights[index - 1];
-
-            var result = await _bookingService.ModifyBookingAsync(new ModifyBookingRequest
-            {
-                BookingId = bookingId,
-                NewFlightId = selectedFlight.FlightId,
-                NewTravelClass = selectedFlight.TravelClass
-            });
-
-            if (result.IsFailure)
-                ConsoleUi.Error(result.Error);
-            else
-                ConsoleUi.Success("Booking modified successfully.");
-
+            ConsoleUi.Info("Modification cancelled.");
             ConsoleUi.Pause();
+            return;
         }
 
-        private async Task ViewMyBookingsShortAsync()
+        var result = await _bookingService.ModifyBookingAsync(new ModifyBookingRequest
         {
-            var bookings = await _bookingService.GetMyBookingsAsync();
+            BookingId = selectedBooking.BookingId,
+            NewFlightId = selectedBooking.FlightId,
+            NewTravelClass = selectedOption.TravelClass
+        });
 
-            if (bookings.Count == 0)
-            {
-                ConsoleUi.Info("You have no bookings.");
-                return;
-            }
+        if (result.IsFailure)
+            ConsoleUi.Error(result.Error);
+        else
+            ConsoleUi.Success("Booking class modified successfully.");
 
-            foreach (var booking in bookings)
-            {
-                Console.WriteLine($"{booking.BookingId} | {booking.FlightNumber} | {booking.TravelClass} | {booking.Price} | {booking.Status}");
-            }
+        ConsoleUi.Pause();
+    }
+
+    private async Task ModifyBookingFlightAndClassAsync(BookingResponse selectedBooking)
+    {
+        ConsoleUi.Section("Choose New Flight");
+
+        var flights = await SearchFlightsWithoutPauseAsync();
+
+        if (flights.Count == 0)
+        {
+            ConsoleUi.Error("No flights found.");
+            ConsoleUi.Pause();
+            return;
         }
 
-        private static void PrintFlights(IReadOnlyList<FlightSearchResult> flights)
+        var groupedFlights = GroupFlights(flights);
+
+        var flightInput = ConsoleUi.Prompt("Select new flight option number");
+
+        if (!int.TryParse(flightInput, out var selectedFlightIndex) ||
+            selectedFlightIndex < 1 ||
+            selectedFlightIndex > groupedFlights.Count)
         {
-            ConsoleUi.Section("Available Flights");
+            ConsoleUi.Error("Invalid flight selection.");
+            ConsoleUi.Pause();
+            return;
+        }
 
-            if (flights.Count == 0)
+        var selectedFlight = groupedFlights[selectedFlightIndex - 1];
+
+        ConsoleUi.Section("Choose New Class");
+
+        for (var i = 0; i < selectedFlight.ClassOptions.Count; i++)
+        {
+            var option = selectedFlight.ClassOptions[i];
+
+            Console.WriteLine(
+                $"{i + 1}. {option.TravelClass,-10} | Price: {option.Price,-8} | Seats: {option.AvailableSeats}");
+        }
+
+        var classInput = ConsoleUi.Prompt("Select new class number");
+
+        if (!int.TryParse(classInput, out var selectedClassIndex) ||
+            selectedClassIndex < 1 ||
+            selectedClassIndex > selectedFlight.ClassOptions.Count)
+        {
+            ConsoleUi.Error("Invalid class selection.");
+            ConsoleUi.Pause();
+            return;
+        }
+
+        var selectedOption = selectedFlight.ClassOptions[selectedClassIndex - 1];
+
+        ConsoleUi.Section("Modification Confirmation");
+        Console.WriteLine($"Old Flight   : {selectedBooking.FlightNumber}");
+        Console.WriteLine($"Old Route    : {selectedBooking.DepartureCountry} -> {selectedBooking.DestinationCountry}");
+        Console.WriteLine($"Old Class    : {selectedBooking.TravelClass}");
+        Console.WriteLine();
+        Console.WriteLine($"New Flight   : {selectedOption.FlightNumber}");
+        Console.WriteLine($"New Route    : {selectedOption.DepartureCountry} -> {selectedOption.DestinationCountry}");
+        Console.WriteLine($"New Class    : {selectedOption.TravelClass}");
+        Console.WriteLine($"New Price    : {selectedOption.Price}");
+
+        var confirm = ConsoleUi.Prompt("Confirm modification? (Y/N)");
+
+        if (!confirm.Equals("Y", StringComparison.OrdinalIgnoreCase))
+        {
+            ConsoleUi.Info("Modification cancelled.");
+            ConsoleUi.Pause();
+            return;
+        }
+
+        var result = await _bookingService.ModifyBookingAsync(new ModifyBookingRequest
+        {
+            BookingId = selectedBooking.BookingId,
+            NewFlightId = selectedOption.FlightId,
+            NewTravelClass = selectedOption.TravelClass
+        });
+
+        if (result.IsFailure)
+            ConsoleUi.Error(result.Error);
+        else
+            ConsoleUi.Success("Booking modified successfully.");
+
+        ConsoleUi.Pause();
+    }
+
+    private static IReadOnlyList<FlightGroup> GroupFlights(IReadOnlyList<FlightSearchResult> flights)
+    {
+        return flights
+            .GroupBy(flight => new
             {
-                ConsoleUi.Info("No flights found.");
-                return;
+                flight.FlightId,
+                flight.FlightNumber,
+                flight.DepartureCountry,
+                flight.DestinationCountry,
+                flight.DepartureAirport,
+                flight.ArrivalAirport,
+                flight.DepartureDate,
+                flight.ArrivalDate
+            })
+            .Select(group => new FlightGroup(
+                group.Key.FlightId,
+                group.Key.FlightNumber,
+                group.Key.DepartureCountry,
+                group.Key.DestinationCountry,
+                group.Key.DepartureAirport,
+                group.Key.ArrivalAirport,
+                group.Key.DepartureDate,
+                group.Key.ArrivalDate,
+                group.OrderBy(item => item.TravelClass).ToList()))
+            .OrderBy(group => group.DepartureDate)
+            .ThenBy(group => group.FlightNumber)
+            .ToList();
+    }
+
+    private static void PrintFlights(IReadOnlyList<FlightSearchResult> flights)
+    {
+        ConsoleUi.Section("Available Flights");
+
+        if (flights.Count == 0)
+        {
+            ConsoleUi.Info("No flights found.");
+            return;
+        }
+
+        var groupedFlights = GroupFlights(flights);
+        const int cardWidth = 56;
+
+        for (var i = 0; i < groupedFlights.Count; i += 2)
+        {
+            var left = BuildFlightCard(groupedFlights[i], i + 1, cardWidth);
+
+            var right = i + 1 < groupedFlights.Count
+                ? BuildFlightCard(groupedFlights[i + 1], i + 2, cardWidth)
+                : [];
+
+            var maxLines = Math.Max(left.Count, right.Count);
+
+            for (var line = 0; line < maxLines; line++)
+            {
+                var leftText = line < left.Count ? left[line] : string.Empty;
+                var rightText = line < right.Count ? right[line] : string.Empty;
+
+                Console.Write(leftText.PadRight(cardWidth));
+
+                if (!string.IsNullOrWhiteSpace(rightText))
+                    Console.Write("   " + rightText);
+
+                Console.WriteLine();
             }
 
-            for (var i = 0; i < flights.Count; i++)
-            {
-                var flight = flights[i];
+            Console.WriteLine();
+        }
+    }
 
-                Console.WriteLine(
-                    $"{i + 1}. {flight.FlightNumber} | {flight.DepartureCountry} -> {flight.DestinationCountry} | " +
-                    $"{flight.DepartureDate:g} | {flight.TravelClass} | {flight.Price} | Seats: {flight.AvailableSeats}");
-            }
+    private static List<string> BuildFlightCard(FlightGroup flight, int index, int width)
+    {
+        var title = $"Option #{index} | {flight.DepartureCountry} to {flight.DestinationCountry}";
+
+        var lines = new List<string>
+    {
+        title,
+        $"Flight No : {flight.FlightNumber} (reference only)",
+        $"Airports  : {flight.DepartureAirport} -> {flight.ArrivalAirport}",
+        $"Departure : {flight.DepartureDate:yyyy-MM-dd HH:mm}",
+        $"Arrival   : {flight.ArrivalDate:yyyy-MM-dd HH:mm}",
+        "Classes:"
+    };
+
+        foreach (var option in flight.ClassOptions)
+        {
+            lines.Add($"  {option.TravelClass,-10} | {option.Price,-7} | Seats: {option.AvailableSeats}");
+        }
+
+        lines.Add(new string('-', width - 2));
+
+        return lines;
+    }
+
+    private static void PrintBookings(IReadOnlyList<BookingResponse> bookings)
+    {
+        if (bookings.Count == 0)
+        {
+            ConsoleUi.Info("You have no bookings.");
+            return;
+        }
+
+        for (var i = 0; i < bookings.Count; i++)
+        {
+            var booking = bookings[i];
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"Booking #{i + 1}");
+            Console.ResetColor();
+
+            Console.WriteLine(new string('-', 60));
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write("Route        : ");
+            Console.ResetColor();
+            Console.WriteLine($"{booking.DepartureCountry} -> {booking.DestinationCountry}");
+
+            Console.WriteLine($"Flight       : {booking.FlightNumber}");
+            Console.WriteLine($"Airports     : {booking.DepartureAirport} -> {booking.ArrivalAirport}");
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("Departure    : ");
+            Console.ResetColor();
+            Console.WriteLine($"{booking.DepartureDate:yyyy-MM-dd HH:mm}");
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("Arrival      : ");
+            Console.ResetColor();
+            Console.WriteLine($"{booking.ArrivalDate:yyyy-MM-dd HH:mm}");
+
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.Write("Class        : ");
+            Console.ResetColor();
+            Console.WriteLine(booking.TravelClass);
+
+            Console.WriteLine($"Price        : {booking.Price}");
+
+            Console.Write("Status       : ");
+            Console.ForegroundColor = booking.Status == BookingStatus.Active
+                ? ConsoleColor.Green
+                : ConsoleColor.Red;
+            Console.WriteLine(booking.Status);
+            Console.ResetColor();
+
+            Console.WriteLine(new string('=', 60));
+            Console.WriteLine();
         }
     }
 }

@@ -8,7 +8,7 @@ namespace AirportTicketBookingSystem.Domain.Entities
 {
     public sealed class PassengerProfile : Entity
     {
-        public Guid UserId { get; private set; }
+        public Guid UserId { get;  set; }
         public string PassportNumber { get; private set; }
 
         private PassengerProfile()

@@ -49,7 +49,8 @@ namespace AirportTicketBookingSystem.Infrastructure.Persistence
             return new JsonSerializerOptions
             {
                 WriteIndented = true,
-                PropertyNameCaseInsensitive = true
+                PropertyNameCaseInsensitive = true,
+                IncludeFields = true
             };
         }
     }
