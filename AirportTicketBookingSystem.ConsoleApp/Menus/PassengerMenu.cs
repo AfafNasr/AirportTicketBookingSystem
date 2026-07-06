@@ -17,6 +17,7 @@ public sealed class PassengerMenu
     private readonly PassengerBookingCancellationWorkflow _bookingCancellationWorkflow;
     private readonly PassengerBookingViewerWorkflow _bookingViewerWorkflow;
     private readonly PassengerAvailableFlightsWorkflow _availableFlightsWorkflow;
+    private readonly PassengerSearchAndBookWorkflow _searchAndBookWorkflow;
 
     private sealed record FlightGroup(
     Guid FlightId,
@@ -37,7 +38,8 @@ public sealed class PassengerMenu
         PassengerBookingWorkflow bookingWorkflow,
         PassengerBookingCancellationWorkflow bookingCancellationWorkflow,
         PassengerBookingViewerWorkflow bookingViewerWorkflow,
-        PassengerAvailableFlightsWorkflow availableFlightsWorkflow)
+        PassengerAvailableFlightsWorkflow availableFlightsWorkflow,
+        PassengerSearchAndBookWorkflow searchAndBookWorkflow)
     {
         _flightService = flightService;
         _bookingService = bookingService;
@@ -47,6 +49,7 @@ public sealed class PassengerMenu
         _bookingCancellationWorkflow = bookingCancellationWorkflow;
         _bookingViewerWorkflow = bookingViewerWorkflow;
         _availableFlightsWorkflow = availableFlightsWorkflow;
+        _searchAndBookWorkflow = searchAndBookWorkflow;
     }
 
     public async Task ShowAsync()
@@ -106,18 +109,7 @@ public sealed class PassengerMenu
 
     private async Task SearchAndBookFlightAsync()
     {
-        ConsoleUi.Header("SEARCH & BOOK FLIGHT");
-
-        var flights = await SearchFlightsWithoutPauseAsync();
-
-        if (flights.Count == 0)
-        {
-            ConsoleUi.Error("No available flights found.");
-            ConsoleUi.Pause();
-            return;
-        }
-
-        await _bookingWorkflow.BookSelectedFlightAsync(flights);
+        await _searchAndBookWorkflow.SearchAndBookFlightAsync(flights => PrintFlights(flights));
     }
 
     private async Task<IReadOnlyList<FlightSearchResult>> SearchFlightsWithoutPauseAsync()

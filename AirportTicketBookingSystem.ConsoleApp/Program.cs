@@ -44,6 +44,10 @@ var passengerBookingWorkflow = new PassengerBookingWorkflow(bookingService);
 var passengerBookingCancellationWorkflow = new PassengerBookingCancellationWorkflow(bookingService);
 var passengerBookingViewerWorkflow =new PassengerBookingViewerWorkflow(bookingService);
 var passengerAvailableFlightsWorkflow = new PassengerAvailableFlightsWorkflow(flightService, passengerBookingWorkflow);
+var passengerSearchAndBookWorkflow =
+    new PassengerSearchAndBookWorkflow(
+        passengerFlightSearchWorkflow,
+        passengerBookingWorkflow);
 
 var passengerMenu = new PassengerMenu(
     flightService,
@@ -53,7 +57,8 @@ var passengerMenu = new PassengerMenu(
     passengerBookingWorkflow,
     passengerBookingCancellationWorkflow,
     passengerBookingViewerWorkflow,
-    passengerAvailableFlightsWorkflow);
+    passengerAvailableFlightsWorkflow,
+    passengerSearchAndBookWorkflow);
 
 var managerMenu = new ManagerMenu(
     csvFlightImportService,
