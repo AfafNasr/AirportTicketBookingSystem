@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace AirportTicketBookingSystem.Application.Common
 {
     public class Result

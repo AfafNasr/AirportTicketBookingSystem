@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace AirportTicketBookingSystem.Application.DTOs.Auth
 {
     public sealed class LoginRequest

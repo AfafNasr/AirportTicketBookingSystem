@@ -1,10 +1,11 @@
-﻿using System.Text;
-using AirportTicketBookingSystem.Application.Services;
+﻿using AirportTicketBookingSystem.Application.Services;
 using AirportTicketBookingSystem.ConsoleApp.Menus;
 using AirportTicketBookingSystem.ConsoleApp.Session;
+using AirportTicketBookingSystem.ConsoleApp.Workflows.Passenger;
 using AirportTicketBookingSystem.Infrastructure.Persistence;
 using AirportTicketBookingSystem.Infrastructure.Security;
 using AirportTicketBookingSystem.Infrastructure.Seed;
+using System.Text;
 
 
 Console.OutputEncoding = Encoding.UTF8;
@@ -38,10 +39,13 @@ var bookingService = new BookingService(
 var csvFlightImportService = new CsvFlightImportService(flightRepository);
 var validationMetadataService = new FlightValidationMetadataService();
 
+var passengerFlightSearchWorkflow = new PassengerFlightSearchWorkflow(flightService);
+
 var passengerMenu = new PassengerMenu(
     flightService,
     bookingService,
-    authService);
+    authService,
+    passengerFlightSearchWorkflow);
 
 var managerMenu = new ManagerMenu(
     csvFlightImportService,

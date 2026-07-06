@@ -3,6 +3,7 @@ using AirportTicketBookingSystem.Application.DTOs.Flights;
 using AirportTicketBookingSystem.Application.Services;
 using AirportTicketBookingSystem.ConsoleApp.Input;
 using AirportTicketBookingSystem.Domain.Enums;
+using AirportTicketBookingSystem.ConsoleApp.Workflows.Passenger;
 
 namespace AirportTicketBookingSystem.ConsoleApp.Menus;
 
@@ -11,6 +12,7 @@ public sealed class PassengerMenu
     private readonly FlightService _flightService;
     private readonly BookingService _bookingService;
     private readonly AuthService _authService;
+    private readonly PassengerFlightSearchWorkflow _flightSearchWorkflow;
 
     private sealed record FlightGroup(
     Guid FlightId,
@@ -26,11 +28,13 @@ public sealed class PassengerMenu
     public PassengerMenu(
         FlightService flightService,
         BookingService bookingService,
-        AuthService authService)
+        AuthService authService,
+        PassengerFlightSearchWorkflow flightSearchWorkflow)
     {
         _flightService = flightService;
         _bookingService = bookingService;
         _authService = authService;
+        _flightSearchWorkflow = flightSearchWorkflow;
     }
 
     public async Task ShowAsync()
@@ -124,241 +128,17 @@ public sealed class PassengerMenu
 
     private async Task<IReadOnlyList<FlightSearchResult>> SearchFlightsWithoutPauseAsync()
     {
-        ConsoleUi.Section("Guided Search");
-
-        var allFlights = await _flightService.SearchAvailableFlightsAsync(new FlightSearchRequest());
-
-        if (allFlights.Count == 0)
-        {
-            ConsoleUi.Info("No flights are available in the system.");
-            return [];
-        }
-
-        var departureCountry = ChooseChipOption(
-            "Departure Country",
-            allFlights
-                .Select(f => f.DepartureCountry)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(x => x)
-                .ToList());
-
-        var destinationCountry = ChooseChipOption(
-            "Destination Country",
-            allFlights
-                .Where(f => IsEmptyOrEqual(departureCountry, f.DepartureCountry))
-                .Select(f => f.DestinationCountry)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(x => x)
-                .ToList());
-
-        var departureDateText = ChooseChipOption(
-            "Departure Date",
-            allFlights
-                .Where(f =>
-                    IsEmptyOrEqual(departureCountry, f.DepartureCountry) &&
-                    IsEmptyOrEqual(destinationCountry, f.DestinationCountry))
-                .Select(f => f.DepartureDate.ToString("yyyy-MM-dd"))
-                .Distinct()
-                .OrderBy(x => x)
-                .ToList());
-
-        DateTime? departureDate = string.IsNullOrWhiteSpace(departureDateText)
-            ? null
-            : DateTime.Parse(departureDateText);
-
-        var departureAirport = ChooseChipOption(
-            "Departure Airport",
-            allFlights
-                .Where(f =>
-                    IsEmptyOrEqual(departureCountry, f.DepartureCountry) &&
-                    IsEmptyOrEqual(destinationCountry, f.DestinationCountry) &&
-                    (!departureDate.HasValue || f.DepartureDate.Date == departureDate.Value.Date))
-                .Select(f => f.DepartureAirport)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(x => x)
-                .ToList());
-
-        var arrivalAirport = ChooseChipOption(
-            "Arrival Airport",
-            allFlights
-                .Where(f =>
-                    IsEmptyOrEqual(departureCountry, f.DepartureCountry) &&
-                    IsEmptyOrEqual(destinationCountry, f.DestinationCountry) &&
-                    (!departureDate.HasValue || f.DepartureDate.Date == departureDate.Value.Date) &&
-                    IsEmptyOrEqual(departureAirport, f.DepartureAirport))
-                .Select(f => f.ArrivalAirport)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(x => x)
-                .ToList());
-
-        var travelClassText = ChooseChipOption(
-            "Travel Class",
-            ["Economy", "Business", "FirstClass"]);
-
-        var travelClass = travelClassText switch
-        {
-            "Economy" => TravelClass.Economy,
-            "Business" => TravelClass.Business,
-            "FirstClass" => TravelClass.FirstClass,
-            _ => (TravelClass?)null
-        };
-
-        var maxPrice = ConsoleParsers.ReadNullableDecimal("Max Price (leave empty for any)");
-
-        var request = new FlightSearchRequest
-        {
-            DepartureCountry = departureCountry,
-            DestinationCountry = destinationCountry,
-            DepartureDate = departureDate,
-            DepartureAirport = departureAirport,
-            ArrivalAirport = arrivalAirport,
-            TravelClass = travelClass,
-            MaxPrice = maxPrice
-        };
-
-        var flights = await _flightService.SearchAvailableFlightsAsync(request);
+        var flights = await _flightSearchWorkflow.SearchFlightsWithoutPauseAsync();
 
         PrintFlights(flights);
 
         return flights;
     }
 
-    private static string? ChooseChipOption(string title, IReadOnlyList<string> options)
-    {
-        ConsoleUi.Section(title);
+    
 
-        if (options.Count == 0)
-        {
-            ConsoleUi.Info("No options available.");
-            return null;
-        }
+    
 
-        Console.ForegroundColor = ConsoleColor.DarkGray;
-        Console.WriteLine("Leave empty for Any / Skip");
-        Console.ResetColor();
-
-        PrintChips(options);
-
-        while (true)
-        {
-            var input = ConsoleUi.Prompt("Selection").Trim();
-
-            if (string.IsNullOrWhiteSpace(input))
-                return null;
-
-            var selected = options.FirstOrDefault(option =>
-                option.Equals(input, StringComparison.OrdinalIgnoreCase));
-
-            if (selected is not null)
-                return selected;
-
-            ConsoleUi.Error("Invalid selection. Please type one of the displayed options exactly.");
-        }
-    }
-
-    private static void PrintChips(IReadOnlyList<string> options)
-    {
-        const int maxLineWidth = 85;
-        var currentLineLength = 0;
-
-        Console.WriteLine();
-
-        foreach (var option in options)
-        {
-            var chip = $"[ {option} ] ";
-
-            if (currentLineLength + chip.Length > maxLineWidth)
-            {
-                Console.WriteLine();
-                currentLineLength = 0;
-            }
-
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.Write(chip);
-            Console.ResetColor();
-
-            currentLineLength += chip.Length;
-        }
-
-        Console.WriteLine();
-        Console.WriteLine();
-    }
-
-    private static bool IsEmptyOrEqual(string? selectedValue, string actualValue)
-    {
-        return string.IsNullOrWhiteSpace(selectedValue) ||
-               actualValue.Equals(selectedValue, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string? ChooseFromList(string title, IReadOnlyList<string> options)
-    {
-        ConsoleUi.Section(title);
-
-        if (options.Count == 0)
-        {
-            ConsoleUi.Info("No options available.");
-            return null;
-        }
-
-        Console.WriteLine("0. Any / Skip");
-
-        for (var i = 0; i < options.Count; i++)
-        {
-            Console.WriteLine($"{i + 1}. {options[i]}");
-        }
-
-        while (true)
-        {
-            var input = ConsoleUi.Prompt($"Choose {title}");
-
-            if (string.IsNullOrWhiteSpace(input) || input == "0")
-                return null;
-
-            if (int.TryParse(input, out var selectedIndex) &&
-                selectedIndex >= 1 &&
-                selectedIndex <= options.Count)
-            {
-                return options[selectedIndex - 1];
-            }
-
-            ConsoleUi.Error("Invalid selection. Please choose a valid option.");
-        }
-    }
-
-    private static DateTime? ChooseDateFromList(string title, IReadOnlyList<DateTime> dates)
-    {
-        ConsoleUi.Section(title);
-
-        if (dates.Count == 0)
-        {
-            ConsoleUi.Info("No dates available.");
-            return null;
-        }
-
-        Console.WriteLine("0. Any / Skip");
-
-        for (var i = 0; i < dates.Count; i++)
-        {
-            Console.WriteLine($"{i + 1}. {dates[i]:yyyy-MM-dd}");
-        }
-
-        while (true)
-        {
-            var input = ConsoleUi.Prompt($"Choose {title}");
-
-            if (string.IsNullOrWhiteSpace(input) || input == "0")
-                return null;
-
-            if (int.TryParse(input, out var selectedIndex) &&
-                selectedIndex >= 1 &&
-                selectedIndex <= dates.Count)
-            {
-                return dates[selectedIndex - 1];
-            }
-
-            ConsoleUi.Error("Invalid selection. Please choose a valid date option.");
-        }
-    }
 
     private static TravelClass? ChooseTravelClass()
     {

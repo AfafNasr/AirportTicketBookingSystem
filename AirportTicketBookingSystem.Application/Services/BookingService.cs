@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
 
 using AirportTicketBookingSystem.Application.Abstractions.Repositories;
 using AirportTicketBookingSystem.Application.Abstractions.Services;
@@ -227,8 +225,7 @@ namespace AirportTicketBookingSystem.Application.Services
             return Result.Success();
         }
 
-        public async Task<IReadOnlyList<ManagerBookingResult>> FilterBookingsAsync(
-    BookingFilterRequest request)
+        public async Task<IReadOnlyList<ManagerBookingResult>> FilterBookingsAsync(BookingFilterRequest request)
         {
             if (!_currentUserService.IsAuthenticated ||
                 _currentUserService.Role != UserRole.Manager)
