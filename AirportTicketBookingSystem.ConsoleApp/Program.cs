@@ -41,13 +41,15 @@ var validationMetadataService = new FlightValidationMetadataService();
 
 var passengerFlightSearchWorkflow = new PassengerFlightSearchWorkflow(flightService);
 var passengerBookingWorkflow = new PassengerBookingWorkflow(bookingService);
+var passengerBookingCancellationWorkflow = new PassengerBookingCancellationWorkflow(bookingService);
 
 var passengerMenu = new PassengerMenu(
     flightService,
     bookingService,
     authService,
     passengerFlightSearchWorkflow,
-    passengerBookingWorkflow);
+    passengerBookingWorkflow,
+    passengerBookingCancellationWorkflow);
 
 var managerMenu = new ManagerMenu(
     csvFlightImportService,

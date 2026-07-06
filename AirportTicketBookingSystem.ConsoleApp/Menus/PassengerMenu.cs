@@ -14,6 +14,7 @@ public sealed class PassengerMenu
     private readonly AuthService _authService;
     private readonly PassengerFlightSearchWorkflow _flightSearchWorkflow;
     private readonly PassengerBookingWorkflow _bookingWorkflow;
+    private readonly PassengerBookingCancellationWorkflow _bookingCancellationWorkflow;
 
     private sealed record FlightGroup(
     Guid FlightId,
@@ -31,13 +32,15 @@ public sealed class PassengerMenu
         BookingService bookingService,
         AuthService authService,
         PassengerFlightSearchWorkflow flightSearchWorkflow,
-        PassengerBookingWorkflow bookingWorkflow)
+        PassengerBookingWorkflow bookingWorkflow,
+        PassengerBookingCancellationWorkflow bookingCancellationWorkflow)
     {
         _flightService = flightService;
         _bookingService = bookingService;
         _authService = authService;
         _flightSearchWorkflow = flightSearchWorkflow;
         _bookingWorkflow = bookingWorkflow;
+        _bookingCancellationWorkflow = bookingCancellationWorkflow;
     }
 
     public async Task ShowAsync()
@@ -188,41 +191,7 @@ public sealed class PassengerMenu
 
     private async Task CancelBookingAsync()
     {
-        ConsoleUi.Header("CANCEL BOOKING");
-
-        var bookings = (await _bookingService.GetMyBookingsAsync())
-       .Where(booking => booking.Status == BookingStatus.Active)
-       .ToList();
-
-        PrintBookings(bookings);
-
-        if (bookings.Count == 0)
-        {
-            ConsoleUi.Pause();
-            return;
-        }
-
-        var input = ConsoleUi.Prompt("Select booking number to cancel");
-
-        if (!int.TryParse(input, out var selectedIndex) ||
-            selectedIndex < 1 ||
-            selectedIndex > bookings.Count)
-        {
-            ConsoleUi.Error("Invalid booking selection.");
-            ConsoleUi.Pause();
-            return;
-        }
-
-        var bookingId = bookings[selectedIndex - 1].BookingId;
-
-        var result = await _bookingService.CancelBookingAsync(bookingId);
-
-        if (result.IsFailure)
-            ConsoleUi.Error(result.Error);
-        else
-            ConsoleUi.Success("Booking cancelled successfully.");
-
-        ConsoleUi.Pause();
+        await _bookingCancellationWorkflow.CancelBookingAsync(bookings => PrintBookings(bookings));
     }
 
     private async Task ModifyBookingAsync()
