@@ -13,6 +13,7 @@ public sealed class PassengerMenu
     private readonly BookingService _bookingService;
     private readonly AuthService _authService;
     private readonly PassengerFlightSearchWorkflow _flightSearchWorkflow;
+    private readonly PassengerBookingWorkflow _bookingWorkflow;
 
     private sealed record FlightGroup(
     Guid FlightId,
@@ -29,12 +30,14 @@ public sealed class PassengerMenu
         FlightService flightService,
         BookingService bookingService,
         AuthService authService,
-        PassengerFlightSearchWorkflow flightSearchWorkflow)
+        PassengerFlightSearchWorkflow flightSearchWorkflow,
+        PassengerBookingWorkflow bookingWorkflow)
     {
         _flightService = flightService;
         _bookingService = bookingService;
         _authService = authService;
         _flightSearchWorkflow = flightSearchWorkflow;
+        _bookingWorkflow = bookingWorkflow;
     }
 
     public async Task ShowAsync()
@@ -107,7 +110,7 @@ public sealed class PassengerMenu
         if (!answer.Equals("Y", StringComparison.OrdinalIgnoreCase))
             return;
 
-        await BookSelectedFlightAsync(flights);
+        await _bookingWorkflow.BookSelectedFlightAsync(flights);
     }
 
     private async Task SearchAndBookFlightAsync()
@@ -123,7 +126,7 @@ public sealed class PassengerMenu
             return;
         }
 
-        await BookSelectedFlightAsync(flights);
+        await _bookingWorkflow.BookSelectedFlightAsync(flights);
     }
 
     private async Task<IReadOnlyList<FlightSearchResult>> SearchFlightsWithoutPauseAsync()
@@ -170,76 +173,7 @@ public sealed class PassengerMenu
         return ChooseTravelClass();
     }
 
-    private async Task BookSelectedFlightAsync(IReadOnlyList<FlightSearchResult> flights)
-    {
-        var groupedFlights = GroupFlights(flights);
-
-        var flightInput = ConsoleUi.Prompt("Enter option number to book");
-
-        if (!int.TryParse(flightInput, out var flightIndex) ||
-            flightIndex < 1 ||
-            flightIndex > groupedFlights.Count)
-        {
-            ConsoleUi.Error("Invalid flight selection.");
-            ConsoleUi.Pause();
-            return;
-        }
-
-        var selectedFlight = groupedFlights[flightIndex - 1];
-
-        ConsoleUi.Section("Choose Class");
-
-        for (var i = 0; i < selectedFlight.ClassOptions.Count; i++)
-        {
-            var option = selectedFlight.ClassOptions[i];
-            Console.WriteLine($"{i + 1}. {option.TravelClass,-10} | Price: {option.Price} | Seats: {option.AvailableSeats}");
-        }
-
-        var classInput = ConsoleUi.Prompt("Select class number");
-
-        if (!int.TryParse(classInput, out var classIndex) ||
-            classIndex < 1 ||
-            classIndex > selectedFlight.ClassOptions.Count)
-        {
-            ConsoleUi.Error("Invalid class selection.");
-            ConsoleUi.Pause();
-            return;
-        }
-
-        var selectedOption = selectedFlight.ClassOptions[classIndex - 1];
-
-        ConsoleUi.Section("Booking Confirmation");
-
-        Console.WriteLine($"Flight    : {selectedOption.FlightNumber}");
-        Console.WriteLine($"Route     : {selectedOption.DepartureCountry} -> {selectedOption.DestinationCountry}");
-        Console.WriteLine($"Departure : {selectedOption.DepartureDate:yyyy-MM-dd HH:mm}");
-        Console.WriteLine($"Arrival   : {selectedOption.ArrivalDate:yyyy-MM-dd HH:mm}");
-        Console.WriteLine($"Class     : {selectedOption.TravelClass}");
-        Console.WriteLine($"Price     : {selectedOption.Price}");
-        Console.WriteLine($"Seats     : {selectedOption.AvailableSeats}");
-
-        var confirm = ConsoleUi.Prompt("Confirm booking? (Y/N)");
-
-        if (!confirm.Equals("Y", StringComparison.OrdinalIgnoreCase))
-        {
-            ConsoleUi.Info("Booking cancelled.");
-            ConsoleUi.Pause();
-            return;
-        }
-
-        var result = await _bookingService.BookFlightAsync(new BookFlightRequest
-        {
-            FlightId = selectedOption.FlightId,
-            TravelClass = selectedOption.TravelClass
-        });
-
-        if (result.IsFailure)
-            ConsoleUi.Error(result.Error);
-        else
-            ConsoleUi.Success($"Booking completed successfully. Booking ID: {result.Value!.BookingId}");
-
-        ConsoleUi.Pause();
-    }
+    
 
     private async Task ViewMyBookingsAsync()
     {

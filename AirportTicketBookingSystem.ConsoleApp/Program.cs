@@ -40,12 +40,14 @@ var csvFlightImportService = new CsvFlightImportService(flightRepository);
 var validationMetadataService = new FlightValidationMetadataService();
 
 var passengerFlightSearchWorkflow = new PassengerFlightSearchWorkflow(flightService);
+var passengerBookingWorkflow = new PassengerBookingWorkflow(bookingService);
 
 var passengerMenu = new PassengerMenu(
     flightService,
     bookingService,
     authService,
-    passengerFlightSearchWorkflow);
+    passengerFlightSearchWorkflow,
+    passengerBookingWorkflow);
 
 var managerMenu = new ManagerMenu(
     csvFlightImportService,
