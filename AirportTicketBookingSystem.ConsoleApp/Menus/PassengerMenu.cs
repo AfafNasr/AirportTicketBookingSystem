@@ -16,6 +16,7 @@ public sealed class PassengerMenu
     private readonly PassengerBookingWorkflow _bookingWorkflow;
     private readonly PassengerBookingCancellationWorkflow _bookingCancellationWorkflow;
     private readonly PassengerBookingViewerWorkflow _bookingViewerWorkflow;
+    private readonly PassengerAvailableFlightsWorkflow _availableFlightsWorkflow;
 
     private sealed record FlightGroup(
     Guid FlightId,
@@ -35,7 +36,8 @@ public sealed class PassengerMenu
         PassengerFlightSearchWorkflow flightSearchWorkflow,
         PassengerBookingWorkflow bookingWorkflow,
         PassengerBookingCancellationWorkflow bookingCancellationWorkflow,
-        PassengerBookingViewerWorkflow bookingViewerWorkflow)
+        PassengerBookingViewerWorkflow bookingViewerWorkflow,
+        PassengerAvailableFlightsWorkflow availableFlightsWorkflow)
     {
         _flightService = flightService;
         _bookingService = bookingService;
@@ -44,6 +46,7 @@ public sealed class PassengerMenu
         _bookingWorkflow = bookingWorkflow;
         _bookingCancellationWorkflow = bookingCancellationWorkflow;
         _bookingViewerWorkflow = bookingViewerWorkflow;
+        _availableFlightsWorkflow = availableFlightsWorkflow;
     }
 
     public async Task ShowAsync()
@@ -98,25 +101,7 @@ public sealed class PassengerMenu
 
     private async Task ViewAllAvailableFlightsAsync()
     {
-        ConsoleUi.Header("ALL AVAILABLE FLIGHTS");
-
-        var flights = await _flightService.SearchAvailableFlightsAsync(
-            new FlightSearchRequest());
-
-        PrintFlights(flights);
-
-        if (flights.Count == 0)
-        {
-            ConsoleUi.Pause();
-            return;
-        }
-
-        var answer = ConsoleUi.Prompt("Do you want to book one of these flights? (Y/N)");
-
-        if (!answer.Equals("Y", StringComparison.OrdinalIgnoreCase))
-            return;
-
-        await _bookingWorkflow.BookSelectedFlightAsync(flights);
+        await _availableFlightsWorkflow.ViewAllAvailableFlightsAsync(flights => PrintFlights(flights));
     }
 
     private async Task SearchAndBookFlightAsync()
