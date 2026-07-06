@@ -48,17 +48,22 @@ var passengerSearchAndBookWorkflow =
     new PassengerSearchAndBookWorkflow(
         passengerFlightSearchWorkflow,
         passengerBookingWorkflow);
+var passengerFlightGrouper = new PassengerFlightGrouper();
+var passengerBookingModificationWorkflow =
+    new PassengerBookingModificationWorkflow(
+        bookingService,
+        flightService,
+        passengerFlightSearchWorkflow,
+        passengerFlightGrouper);
 
 var passengerMenu = new PassengerMenu(
-    flightService,
-    bookingService,
     authService,
-    passengerFlightSearchWorkflow,
-    passengerBookingWorkflow,
     passengerBookingCancellationWorkflow,
     passengerBookingViewerWorkflow,
     passengerAvailableFlightsWorkflow,
-    passengerSearchAndBookWorkflow);
+    passengerSearchAndBookWorkflow,
+    passengerFlightGrouper,
+    passengerBookingModificationWorkflow);
 
 var managerMenu = new ManagerMenu(
     csvFlightImportService,
