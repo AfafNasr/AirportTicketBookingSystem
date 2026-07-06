@@ -15,6 +15,7 @@ public sealed class PassengerMenu
     private readonly PassengerFlightSearchWorkflow _flightSearchWorkflow;
     private readonly PassengerBookingWorkflow _bookingWorkflow;
     private readonly PassengerBookingCancellationWorkflow _bookingCancellationWorkflow;
+    private readonly PassengerBookingViewerWorkflow _bookingViewerWorkflow;
 
     private sealed record FlightGroup(
     Guid FlightId,
@@ -33,7 +34,8 @@ public sealed class PassengerMenu
         AuthService authService,
         PassengerFlightSearchWorkflow flightSearchWorkflow,
         PassengerBookingWorkflow bookingWorkflow,
-        PassengerBookingCancellationWorkflow bookingCancellationWorkflow)
+        PassengerBookingCancellationWorkflow bookingCancellationWorkflow,
+        PassengerBookingViewerWorkflow bookingViewerWorkflow)
     {
         _flightService = flightService;
         _bookingService = bookingService;
@@ -41,6 +43,7 @@ public sealed class PassengerMenu
         _flightSearchWorkflow = flightSearchWorkflow;
         _bookingWorkflow = bookingWorkflow;
         _bookingCancellationWorkflow = bookingCancellationWorkflow;
+        _bookingViewerWorkflow = bookingViewerWorkflow;
     }
 
     public async Task ShowAsync()
@@ -140,12 +143,6 @@ public sealed class PassengerMenu
 
         return flights;
     }
-
-    
-
-    
-
-
     private static TravelClass? ChooseTravelClass()
     {
         ConsoleUi.Section("Travel Class");
@@ -176,17 +173,9 @@ public sealed class PassengerMenu
         return ChooseTravelClass();
     }
 
-    
-
     private async Task ViewMyBookingsAsync()
     {
-        ConsoleUi.Header("MY BOOKINGS");
-
-        var bookings = await _bookingService.GetMyBookingsAsync();
-
-        PrintBookings(bookings);
-
-        ConsoleUi.Pause();
+        await _bookingViewerWorkflow.ViewMyBookingsAsync(bookings => PrintBookings(bookings));
     }
 
     private async Task CancelBookingAsync()
@@ -418,7 +407,6 @@ public sealed class PassengerMenu
 
         ConsoleUi.Pause();
     }
-
     private static IReadOnlyList<FlightGroup> GroupFlights(IReadOnlyList<FlightSearchResult> flights)
     {
         return flights
@@ -487,7 +475,6 @@ public sealed class PassengerMenu
             Console.WriteLine();
         }
     }
-
     private static List<string> BuildFlightCard(FlightGroup flight, int index, int width)
     {
         var title = $"Option #{index} | {flight.DepartureCountry} to {flight.DestinationCountry}";
