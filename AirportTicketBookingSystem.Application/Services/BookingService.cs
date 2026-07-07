@@ -42,6 +42,16 @@ namespace AirportTicketBookingSystem.Application.Services
             if (flight is null)
                 return Result<BookingResponse>.Failure("Flight was not found.");
 
+            var bookings = await _bookingRepository.GetAllAsync();
+
+            var alreadyBooked = bookings.Any(booking =>
+                booking.PassengerUserId == _currentUserService.UserId.Value &&
+                booking.FlightId == request.FlightId &&
+                booking.Status == BookingStatus.Active);
+
+            if (alreadyBooked)
+                return Result<BookingResponse>.Failure("You already have an active booking for this flight.");
+
             if (flight.DepartureDate <= DateTime.Now)
                 return Result<BookingResponse>.Failure("Cannot book a departed flight.");
 

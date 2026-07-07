@@ -18,7 +18,7 @@ var flightRepository = new FlightRepository();
 var bookingRepository = new BookingRepository();
 
 var passwordHasher = new Sha256PasswordHasher();
-var currentUserService = new CurrentUserService();
+var currentUserService = new CurrentUserSession();
 
 var managerSeeder = new ManagerSeeder(userRepository, passwordHasher);
 await managerSeeder.SeedAsync();
@@ -47,14 +47,10 @@ var passengerFlightSearchHandler = new PassengerFlightSearchHandler(flightServic
 var passengerBookingHandler = new PassengerBookingHandler(bookingService);
 var passengerBookingCancellationHandler = new PassengerBookingCancellationHandler(bookingService);
 var passengerBookingViewerHandler = new PassengerBookingViewerHandler(bookingService);
-var passengerAvailableFlightsHandler = new PassengerAvailableFlightsHandler(flightService, passengerBookingWorkflow);
-var passengerSearchAndBookHandler =
-    new PassengerSearchAndBookHandler(
-        passengerFlightSearchHandler,
-        passengerBookingHandler);
+var passengerAvailableFlightsHandler = new PassengerAvailableFlightsHandler(flightService, passengerBookingHandler);
+var passengerSearchAndBookHandler = new PassengerSearchAndBookHandler(passengerFlightSearchHandler,passengerBookingHandler);
 var passengerFlightGrouper = new PassengerFlightGrouper();
-var passengerBookingModificationWorkflow =
-    new PassengerBookingModificationHandler(
+var passengerBookingModificationWorkflow = new PassengerBookingModificationHandler(
         bookingService,
         flightService,
         passengerFlightSearchHandler,
