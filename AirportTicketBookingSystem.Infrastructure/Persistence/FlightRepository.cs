@@ -7,7 +7,7 @@ namespace AirportTicketBookingSystem.Infrastructure.Persistence
 {
     public sealed class FlightRepository : JsonFileRepository<Flight>, IFlightRepository
     {
-        public FlightRepository() : base("Flights.json")
+        public FlightRepository() : base(DataFileNames.Flights)
         {
         }
 

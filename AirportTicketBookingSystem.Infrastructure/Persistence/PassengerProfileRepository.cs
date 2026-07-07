@@ -8,7 +8,7 @@ namespace AirportTicketBookingSystem.Infrastructure.Persistence
     public sealed class PassengerProfileRepository
     : JsonFileRepository<PassengerProfile>, IPassengerProfileRepository
     {
-        public PassengerProfileRepository() : base("PassengerProfiles.json")
+        public PassengerProfileRepository() : base(DataFileNames.PassengerProfiles)
         {
         }
 

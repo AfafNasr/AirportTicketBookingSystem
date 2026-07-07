@@ -7,7 +7,7 @@ namespace AirportTicketBookingSystem.Infrastructure.Persistence
 {
     public sealed class UserRepository : JsonFileRepository<User>, IUserRepository
     {
-        public UserRepository() : base("Users.json")
+        public UserRepository() : base(DataFileNames.Users)
         {
         }
 
