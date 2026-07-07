@@ -4,7 +4,7 @@ using AirportTicketBookingSystem.Domain.Enums;
 
 namespace AirportTicketBookingSystem.Application.Abstractions.Services
 {
-    public interface ICurrentUserService
+    public interface ICurrentUserSession
     {
         Guid? UserId { get; }
         string? Email { get; }

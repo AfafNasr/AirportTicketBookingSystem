@@ -10,12 +10,12 @@ namespace AirportTicketBookingSystem.ConsoleApp.Menus;
 public sealed class PassengerMenu
 {
     private readonly AuthService _authService;
-    private readonly PassengerBookingCancellationHandler _bookingCancellationWorkflow;
-    private readonly PassengerBookingViewerHandler _bookingViewerWorkflow;
-    private readonly PassengerAvailableFlightsHandler _availableFlightsWorkflow;
-    private readonly PassengerSearchAndBookHandler _searchAndBookWorkflow;
+    private readonly PassengerBookingCancellationHandler _bookingCancellationHandler;
+    private readonly PassengerBookingViewerHandler _bookingViewerHandler;
+    private readonly PassengerAvailableFlightsHandler _availableFlightsHandler;
+    private readonly PassengerSearchAndBookHandler _searchAndBookHandler;
     private readonly PassengerFlightGrouper _flightGrouper;
-    private readonly PassengerBookingModificationHandler _bookingModificationWorkflow;
+    private readonly PassengerBookingModificationHandler _bookingModificationHandler;
     public PassengerMenu(
        
         AuthService authService,
@@ -28,12 +28,12 @@ public sealed class PassengerMenu
     {
         
         _authService = authService;
-        _bookingCancellationWorkflow = bookingCancellationHandler;
-        _bookingViewerWorkflow = bookingViewerHandler;
-        _availableFlightsWorkflow = availableFlightsHandler;
-        _searchAndBookWorkflow = searchAndBookHandler;
+        _bookingCancellationHandler = bookingCancellationHandler;
+        _bookingViewerHandler = bookingViewerHandler;
+        _availableFlightsHandler = availableFlightsHandler;
+        _searchAndBookHandler = searchAndBookHandler;
         _flightGrouper = flightGrouper;
-        _bookingModificationWorkflow = bookingModificationHandler;
+        _bookingModificationHandler = bookingModificationHandler;
     }
 
     public async Task ShowAsync()
@@ -88,27 +88,27 @@ public sealed class PassengerMenu
 
     private async Task ViewAllAvailableFlightsAsync()
     {
-        await _availableFlightsWorkflow.ViewAllAvailableFlightsAsync(flights => PrintFlights(flights));
+        await _availableFlightsHandler.ViewAllAvailableFlightsAsync(flights => PrintFlights(flights));
     }
 
     private async Task SearchAndBookFlightAsync()
     {
-        await _searchAndBookWorkflow.SearchAndBookFlightAsync(flights => PrintFlights(flights));
+        await _searchAndBookHandler.SearchAndBookFlightAsync(flights => PrintFlights(flights));
     }
 
     private async Task ViewMyBookingsAsync()
     {
-        await _bookingViewerWorkflow.ViewMyBookingsAsync(bookings => PrintBookings(bookings));
+        await _bookingViewerHandler.ViewMyBookingsAsync(bookings => PrintBookings(bookings));
     }
 
     private async Task CancelBookingAsync()
     {
-        await _bookingCancellationWorkflow.CancelBookingAsync(bookings => PrintBookings(bookings));
+        await _bookingCancellationHandler.CancelBookingAsync(bookings => PrintBookings(bookings));
     }
 
     private async Task ModifyBookingAsync()
     {
-        await _bookingModificationWorkflow.ModifyBookingAsync(
+        await _bookingModificationHandler.ModifyBookingAsync(
             bookings => PrintBookings(bookings),
             flights => PrintFlights(flights));
     }

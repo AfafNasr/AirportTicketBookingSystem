@@ -14,14 +14,14 @@ namespace AirportTicketBookingSystem.Application.Services
     {
         private readonly IBookingRepository _bookingRepository;
         private readonly IFlightRepository _flightRepository;
-        private readonly ICurrentUserService _currentUserService;
+        private readonly ICurrentUserSession _currentUserService;
         private readonly IUserRepository _userRepository;
 
         public BookingService(
             IBookingRepository bookingRepository,
             IFlightRepository flightRepository,
              IUserRepository userRepository,
-            ICurrentUserService currentUserService)
+            ICurrentUserSession currentUserService)
         {
             _bookingRepository = bookingRepository;
             _flightRepository = flightRepository;

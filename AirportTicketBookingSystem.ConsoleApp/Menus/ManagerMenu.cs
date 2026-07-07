@@ -1,14 +1,12 @@
-﻿using AirportTicketBookingSystem.Application.DTOs.Bookings;
+﻿
 using AirportTicketBookingSystem.Application.Services;
 using AirportTicketBookingSystem.ConsoleApp.Input;
-using AirportTicketBookingSystem.Domain.Enums;
 using AirportTicketBookingSystem.ConsoleApp.Handlers.Manager;
 
 namespace AirportTicketBookingSystem.ConsoleApp.Menus
 {
     public sealed class ManagerMenu
     {
-        private readonly BookingService _bookingService;
         private readonly AuthService _authService;
         private readonly ManagerFlightImportHandler _flightImportHandler;
         private readonly ManagerValidationRulesHandler _validationRulesHandler;
