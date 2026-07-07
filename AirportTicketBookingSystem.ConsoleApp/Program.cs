@@ -39,8 +39,8 @@ var bookingService = new BookingService(
 
 var csvFlightImportService = new CsvFlightImportService(flightRepository);
 var validationMetadataService = new FlightValidationMetadataService();
-var managerFlightImportHandler =
-    new ManagerFlightImportHandler(csvFlightImportService);
+var managerFlightImportHandler =new ManagerFlightImportHandler(csvFlightImportService);
+var managerValidationRulesHandler =new ManagerValidationRulesHandler(validationMetadataService);
 
 var passengerFlightSearchWorkflow = new PassengerFlightSearchHandler(flightService);
 var passengerBookingWorkflow = new PassengerBookingHandler(bookingService);
@@ -69,10 +69,10 @@ var passengerMenu = new PassengerMenu(
     passengerBookingModificationWorkflow);
 
 var managerMenu = new ManagerMenu(
-    validationMetadataService,
     bookingService,
     authService,
-    managerFlightImportHandler);
+    managerFlightImportHandler,
+    managerValidationRulesHandler);
 
 var mainMenu = new MainMenu(
     authService,

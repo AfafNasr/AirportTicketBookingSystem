@@ -8,22 +8,21 @@ namespace AirportTicketBookingSystem.ConsoleApp.Menus
 {
     public sealed class ManagerMenu
     {
-        private readonly CsvFlightImportService _csvFlightImportService;
-        private readonly FlightValidationMetadataService _validationMetadataService;
         private readonly BookingService _bookingService;
         private readonly AuthService _authService;
         private readonly ManagerFlightImportHandler _flightImportHandler;
+        private readonly ManagerValidationRulesHandler _validationRulesHandler;
 
         public ManagerMenu(
-            FlightValidationMetadataService validationMetadataService,
             BookingService bookingService,
             AuthService authService,
-            ManagerFlightImportHandler flightImportHandler)
+            ManagerFlightImportHandler flightImportHandler,
+            ManagerValidationRulesHandler validationRulesHandler)
         {
-            _validationMetadataService = validationMetadataService;
             _bookingService = bookingService;
             _authService = authService;
             _flightImportHandler = flightImportHandler;
+            _validationRulesHandler = validationRulesHandler;
         }
 
         public async Task ShowAsync()
@@ -47,7 +46,7 @@ namespace AirportTicketBookingSystem.ConsoleApp.Menus
                         break;
 
                     case "2":
-                        ViewValidationRules();
+                        _validationRulesHandler.ViewValidationRules();
                         break;
 
                     case "3":
@@ -64,34 +63,6 @@ namespace AirportTicketBookingSystem.ConsoleApp.Menus
                         break;
                 }
             }
-        }
-
-        
-
-        private void ViewValidationRules()
-        {
-            ConsoleUi.Header("FLIGHT VALIDATION RULES");
-
-            var rules = _validationMetadataService.GetFlightValidationRules();
-
-            foreach (var rule in rules)
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine(rule.FieldName);
-                Console.ResetColor();
-
-                Console.WriteLine($"Type: {rule.FieldType}");
-                Console.WriteLine("Constraints:");
-
-                foreach (var constraint in rule.Constraints)
-                {
-                    Console.WriteLine($" - {constraint}");
-                }
-
-                Console.WriteLine();
-            }
-
-            ConsoleUi.Pause();
         }
 
         private async Task FilterBookingsAsync()
