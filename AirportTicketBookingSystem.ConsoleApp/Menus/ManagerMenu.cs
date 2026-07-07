@@ -2,6 +2,7 @@
 using AirportTicketBookingSystem.Application.Services;
 using AirportTicketBookingSystem.ConsoleApp.Input;
 using AirportTicketBookingSystem.Domain.Enums;
+using AirportTicketBookingSystem.ConsoleApp.Handlers.Manager;
 
 namespace AirportTicketBookingSystem.ConsoleApp.Menus
 {
@@ -11,17 +12,18 @@ namespace AirportTicketBookingSystem.ConsoleApp.Menus
         private readonly FlightValidationMetadataService _validationMetadataService;
         private readonly BookingService _bookingService;
         private readonly AuthService _authService;
+        private readonly ManagerFlightImportHandler _flightImportHandler;
 
         public ManagerMenu(
-            CsvFlightImportService csvFlightImportService,
             FlightValidationMetadataService validationMetadataService,
             BookingService bookingService,
-            AuthService authService)
+            AuthService authService,
+            ManagerFlightImportHandler flightImportHandler)
         {
-            _csvFlightImportService = csvFlightImportService;
             _validationMetadataService = validationMetadataService;
             _bookingService = bookingService;
             _authService = authService;
+            _flightImportHandler = flightImportHandler;
         }
 
         public async Task ShowAsync()
@@ -41,7 +43,7 @@ namespace AirportTicketBookingSystem.ConsoleApp.Menus
                 switch (choice)
                 {
                     case "1":
-                        await ImportFlightsAsync();
+                        await _flightImportHandler.ImportFlightsAsync();
                         break;
 
                     case "2":
@@ -64,48 +66,7 @@ namespace AirportTicketBookingSystem.ConsoleApp.Menus
             }
         }
 
-        private async Task ImportFlightsAsync()
-        {
-            ConsoleUi.Header("IMPORT FLIGHTS FROM CSV");
-
-            var filePath = ConsoleUi.Prompt("CSV File Path");
-
-            var result = await _csvFlightImportService.ImportAsync(filePath);
-
-            Console.WriteLine();
-            ConsoleUi.Success($"Imported Flights: {result.ImportedCount}");
-
-            if (result.HasErrors)
-            {
-                ConsoleUi.Section("Validation Errors");
-
-                var errorsByRow = result.Errors
-                    .GroupBy(error => error.RowNumber)
-                    .OrderBy(group => group.Key);
-
-                foreach (var rowGroup in errorsByRow)
-                {
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.WriteLine($"Row {rowGroup.Key}");
-                    Console.ResetColor();
-
-                    Console.WriteLine(new string('-', 50));
-
-                    foreach (var error in rowGroup)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.Write($"{error.FieldName}: ");
-                        Console.ResetColor();
-
-                        Console.WriteLine(error.ErrorMessage);
-                    }
-
-                    Console.WriteLine();
-                }
-            }
-
-            ConsoleUi.Pause();
-        }
+        
 
         private void ViewValidationRules()
         {

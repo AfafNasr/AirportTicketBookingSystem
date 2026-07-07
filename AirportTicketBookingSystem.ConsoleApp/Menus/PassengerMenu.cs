@@ -19,21 +19,21 @@ public sealed class PassengerMenu
     public PassengerMenu(
        
         AuthService authService,
-        PassengerBookingCancellationHandler bookingCancellationWorkflow,
-        PassengerBookingViewerHandler bookingViewerWorkflow,
-        PassengerAvailableFlightsHandler availableFlightsWorkflow,
-        PassengerSearchAndBookHandler searchAndBookWorkflow,
+        PassengerBookingCancellationHandler bookingCancellationHandler,
+        PassengerBookingViewerHandler bookingViewerHandler,
+        PassengerAvailableFlightsHandler availableFlightsHandler,
+        PassengerSearchAndBookHandler searchAndBookHandler,
         PassengerFlightGrouper flightGrouper,
-        PassengerBookingModificationHandler bookingModificationWorkflow)
+        PassengerBookingModificationHandler bookingModificationHandler)
     {
         
         _authService = authService;
-        _bookingCancellationWorkflow = bookingCancellationWorkflow;
-        _bookingViewerWorkflow = bookingViewerWorkflow;
-        _availableFlightsWorkflow = availableFlightsWorkflow;
-        _searchAndBookWorkflow = searchAndBookWorkflow;
+        _bookingCancellationWorkflow = bookingCancellationHandler;
+        _bookingViewerWorkflow = bookingViewerHandler;
+        _availableFlightsWorkflow = availableFlightsHandler;
+        _searchAndBookWorkflow = searchAndBookHandler;
         _flightGrouper = flightGrouper;
-        _bookingModificationWorkflow = bookingModificationWorkflow;
+        _bookingModificationWorkflow = bookingModificationHandler;
     }
 
     public async Task ShowAsync()
