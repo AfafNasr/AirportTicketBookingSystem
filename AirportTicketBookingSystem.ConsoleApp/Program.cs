@@ -39,18 +39,18 @@ var bookingService = new BookingService(
 var csvFlightImportService = new CsvFlightImportService(flightRepository);
 var validationMetadataService = new FlightValidationMetadataService();
 
-var passengerFlightSearchWorkflow = new PassengerFlightSearchWorkflow(flightService);
-var passengerBookingWorkflow = new PassengerBookingWorkflow(bookingService);
-var passengerBookingCancellationWorkflow = new PassengerBookingCancellationWorkflow(bookingService);
-var passengerBookingViewerWorkflow =new PassengerBookingViewerWorkflow(bookingService);
-var passengerAvailableFlightsWorkflow = new PassengerAvailableFlightsWorkflow(flightService, passengerBookingWorkflow);
+var passengerFlightSearchWorkflow = new PassengerFlightSearchHandler(flightService);
+var passengerBookingWorkflow = new PassengerBookingHandler(bookingService);
+var passengerBookingCancellationWorkflow = new PassengerBookingCancellationHandler(bookingService);
+var passengerBookingViewerWorkflow =new PassengerBookingViewerHandler(bookingService);
+var passengerAvailableFlightsWorkflow = new PassengerAvailableFlightsHandler(flightService, passengerBookingWorkflow);
 var passengerSearchAndBookWorkflow =
-    new PassengerSearchAndBookWorkflow(
+    new PassengerSearchAndBookHandler(
         passengerFlightSearchWorkflow,
         passengerBookingWorkflow);
 var passengerFlightGrouper = new PassengerFlightGrouper();
 var passengerBookingModificationWorkflow =
-    new PassengerBookingModificationWorkflow(
+    new PassengerBookingModificationHandler(
         bookingService,
         flightService,
         passengerFlightSearchWorkflow,

@@ -5,11 +5,11 @@ using AirportTicketBookingSystem.Domain.Enums;
 
 namespace AirportTicketBookingSystem.ConsoleApp.Workflows.Passenger
 {
-    public sealed class PassengerBookingCancellationWorkflow
+    public sealed class PassengerBookingCancellationHandler
     {
         private readonly BookingService _bookingService;
 
-        public PassengerBookingCancellationWorkflow(BookingService bookingService)
+        public PassengerBookingCancellationHandler(BookingService bookingService)
         {
             _bookingService = bookingService;
         }

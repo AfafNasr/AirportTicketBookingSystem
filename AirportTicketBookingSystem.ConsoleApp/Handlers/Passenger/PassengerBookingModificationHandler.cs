@@ -6,17 +6,17 @@ using AirportTicketBookingSystem.Domain.Enums;
 
 namespace AirportTicketBookingSystem.ConsoleApp.Workflows.Passenger
 {
-    public sealed class PassengerBookingModificationWorkflow
+    public sealed class PassengerBookingModificationHandler
     {
         private readonly BookingService _bookingService;
         private readonly FlightService _flightService;
-        private readonly PassengerFlightSearchWorkflow _flightSearchWorkflow;
+        private readonly PassengerFlightSearchHandler _flightSearchWorkflow;
         private readonly PassengerFlightGrouper _flightGrouper;
 
-        public PassengerBookingModificationWorkflow(
+        public PassengerBookingModificationHandler(
             BookingService bookingService,
             FlightService flightService,
-            PassengerFlightSearchWorkflow flightSearchWorkflow,
+            PassengerFlightSearchHandler flightSearchWorkflow,
              PassengerFlightGrouper flightGrouper)
         {
             _bookingService = bookingService;

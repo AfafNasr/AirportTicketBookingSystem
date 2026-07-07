@@ -5,7 +5,7 @@ using AirportTicketBookingSystem.ConsoleApp.Input;
 
 namespace AirportTicketBookingSystem.ConsoleApp.Workflows.Passenger;
 
-public sealed class PassengerBookingWorkflow
+public sealed class PassengerBookingHandler
 {
     private readonly BookingService _bookingService;
 
@@ -20,7 +20,7 @@ public sealed class PassengerBookingWorkflow
         DateTime ArrivalDate,
         IReadOnlyList<FlightSearchResult> ClassOptions);
 
-    public PassengerBookingWorkflow(BookingService bookingService)
+    public PassengerBookingHandler(BookingService bookingService)
     {
         _bookingService = bookingService;
     }

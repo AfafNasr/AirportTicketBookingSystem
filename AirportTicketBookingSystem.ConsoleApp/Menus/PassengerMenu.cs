@@ -9,26 +9,22 @@ namespace AirportTicketBookingSystem.ConsoleApp.Menus;
 
 public sealed class PassengerMenu
 {
-  
     private readonly AuthService _authService;
-    private readonly PassengerBookingCancellationWorkflow _bookingCancellationWorkflow;
-    private readonly PassengerBookingViewerWorkflow _bookingViewerWorkflow;
-    private readonly PassengerAvailableFlightsWorkflow _availableFlightsWorkflow;
-    private readonly PassengerSearchAndBookWorkflow _searchAndBookWorkflow;
+    private readonly PassengerBookingCancellationHandler _bookingCancellationWorkflow;
+    private readonly PassengerBookingViewerHandler _bookingViewerWorkflow;
+    private readonly PassengerAvailableFlightsHandler _availableFlightsWorkflow;
+    private readonly PassengerSearchAndBookHandler _searchAndBookWorkflow;
     private readonly PassengerFlightGrouper _flightGrouper;
-    private readonly PassengerBookingModificationWorkflow _bookingModificationWorkflow;
-
-
-
+    private readonly PassengerBookingModificationHandler _bookingModificationWorkflow;
     public PassengerMenu(
        
         AuthService authService,
-        PassengerBookingCancellationWorkflow bookingCancellationWorkflow,
-        PassengerBookingViewerWorkflow bookingViewerWorkflow,
-        PassengerAvailableFlightsWorkflow availableFlightsWorkflow,
-        PassengerSearchAndBookWorkflow searchAndBookWorkflow,
+        PassengerBookingCancellationHandler bookingCancellationWorkflow,
+        PassengerBookingViewerHandler bookingViewerWorkflow,
+        PassengerAvailableFlightsHandler availableFlightsWorkflow,
+        PassengerSearchAndBookHandler searchAndBookWorkflow,
         PassengerFlightGrouper flightGrouper,
-        PassengerBookingModificationWorkflow bookingModificationWorkflow)
+        PassengerBookingModificationHandler bookingModificationWorkflow)
     {
         
         _authService = authService;

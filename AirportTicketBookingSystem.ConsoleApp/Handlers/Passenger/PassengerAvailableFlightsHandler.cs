@@ -4,14 +4,14 @@ using AirportTicketBookingSystem.ConsoleApp.Input;
 
 namespace AirportTicketBookingSystem.ConsoleApp.Workflows.Passenger
 {
-    public sealed class PassengerAvailableFlightsWorkflow
+    public sealed class PassengerAvailableFlightsHandler
     {
         private readonly FlightService _flightService;
-        private readonly PassengerBookingWorkflow _bookingWorkflow;
+        private readonly PassengerBookingHandler _bookingWorkflow;
 
-        public PassengerAvailableFlightsWorkflow(
+        public PassengerAvailableFlightsHandler(
             FlightService flightService,
-            PassengerBookingWorkflow bookingWorkflow)
+            PassengerBookingHandler bookingWorkflow)
         {
             _flightService = flightService;
             _bookingWorkflow = bookingWorkflow;
