@@ -41,38 +41,39 @@ var csvFlightImportService = new CsvFlightImportService(flightRepository);
 var validationMetadataService = new FlightValidationMetadataService();
 var managerFlightImportHandler =new ManagerFlightImportHandler(csvFlightImportService);
 var managerValidationRulesHandler =new ManagerValidationRulesHandler(validationMetadataService);
+var managerBookingFilterHandler =new ManagerBookingFilterHandler(bookingService);
 
-var passengerFlightSearchWorkflow = new PassengerFlightSearchHandler(flightService);
-var passengerBookingWorkflow = new PassengerBookingHandler(bookingService);
-var passengerBookingCancellationWorkflow = new PassengerBookingCancellationHandler(bookingService);
-var passengerBookingViewerWorkflow =new PassengerBookingViewerHandler(bookingService);
-var passengerAvailableFlightsWorkflow = new PassengerAvailableFlightsHandler(flightService, passengerBookingWorkflow);
-var passengerSearchAndBookWorkflow =
+var passengerFlightSearchHandler = new PassengerFlightSearchHandler(flightService);
+var passengerBookingHandler = new PassengerBookingHandler(bookingService);
+var passengerBookingCancellationHandler = new PassengerBookingCancellationHandler(bookingService);
+var passengerBookingViewerHandler = new PassengerBookingViewerHandler(bookingService);
+var passengerAvailableFlightsHandler = new PassengerAvailableFlightsHandler(flightService, passengerBookingWorkflow);
+var passengerSearchAndBookHandler =
     new PassengerSearchAndBookHandler(
-        passengerFlightSearchWorkflow,
-        passengerBookingWorkflow);
+        passengerFlightSearchHandler,
+        passengerBookingHandler);
 var passengerFlightGrouper = new PassengerFlightGrouper();
 var passengerBookingModificationWorkflow =
     new PassengerBookingModificationHandler(
         bookingService,
         flightService,
-        passengerFlightSearchWorkflow,
+        passengerFlightSearchHandler,
         passengerFlightGrouper);
 
 var passengerMenu = new PassengerMenu(
     authService,
-    passengerBookingCancellationWorkflow,
-    passengerBookingViewerWorkflow,
-    passengerAvailableFlightsWorkflow,
-    passengerSearchAndBookWorkflow,
+    passengerBookingCancellationHandler,
+    passengerBookingViewerHandler,
+    passengerAvailableFlightsHandler,
+    passengerSearchAndBookHandler,
     passengerFlightGrouper,
     passengerBookingModificationWorkflow);
 
 var managerMenu = new ManagerMenu(
-    bookingService,
     authService,
     managerFlightImportHandler,
-    managerValidationRulesHandler);
+    managerValidationRulesHandler,
+     managerBookingFilterHandler);
 
 var mainMenu = new MainMenu(
     authService,
