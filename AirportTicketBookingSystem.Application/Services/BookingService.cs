@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
 
 using AirportTicketBookingSystem.Application.Abstractions.Repositories;
 using AirportTicketBookingSystem.Application.Abstractions.Services;
@@ -16,14 +14,14 @@ namespace AirportTicketBookingSystem.Application.Services
     {
         private readonly IBookingRepository _bookingRepository;
         private readonly IFlightRepository _flightRepository;
-        private readonly ICurrentUserService _currentUserService;
+        private readonly ICurrentUserSession _currentUserService;
         private readonly IUserRepository _userRepository;
 
         public BookingService(
             IBookingRepository bookingRepository,
             IFlightRepository flightRepository,
              IUserRepository userRepository,
-            ICurrentUserService currentUserService)
+            ICurrentUserSession currentUserService)
         {
             _bookingRepository = bookingRepository;
             _flightRepository = flightRepository;
@@ -43,6 +41,16 @@ namespace AirportTicketBookingSystem.Application.Services
 
             if (flight is null)
                 return Result<BookingResponse>.Failure("Flight was not found.");
+
+            var bookings = await _bookingRepository.GetAllAsync();
+
+            var alreadyBooked = bookings.Any(booking =>
+                booking.PassengerUserId == _currentUserService.UserId.Value &&
+                booking.FlightId == request.FlightId &&
+                booking.Status == BookingStatus.Active);
+
+            if (alreadyBooked)
+                return Result<BookingResponse>.Failure("You already have an active booking for this flight.");
 
             if (flight.DepartureDate <= DateTime.Now)
                 return Result<BookingResponse>.Failure("Cannot book a departed flight.");
@@ -227,8 +235,7 @@ namespace AirportTicketBookingSystem.Application.Services
             return Result.Success();
         }
 
-        public async Task<IReadOnlyList<ManagerBookingResult>> FilterBookingsAsync(
-    BookingFilterRequest request)
+        public async Task<IReadOnlyList<ManagerBookingResult>> FilterBookingsAsync(BookingFilterRequest request)
         {
             if (!_currentUserService.IsAuthenticated ||
                 _currentUserService.Role != UserRole.Manager)

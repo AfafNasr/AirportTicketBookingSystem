@@ -1,7 +1,5 @@
 ﻿using AirportTicketBookingSystem.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 
 namespace AirportTicketBookingSystem.Application.DTOs.Auth
 {

@@ -1,10 +1,12 @@
-﻿using System.Text;
-using AirportTicketBookingSystem.Application.Services;
+﻿using AirportTicketBookingSystem.Application.Services;
 using AirportTicketBookingSystem.ConsoleApp.Menus;
 using AirportTicketBookingSystem.ConsoleApp.Session;
+using AirportTicketBookingSystem.ConsoleApp.Workflows.Passenger;
+using AirportTicketBookingSystem.ConsoleApp.Handlers.Manager;
 using AirportTicketBookingSystem.Infrastructure.Persistence;
 using AirportTicketBookingSystem.Infrastructure.Security;
 using AirportTicketBookingSystem.Infrastructure.Seed;
+using System.Text;
 
 
 Console.OutputEncoding = Encoding.UTF8;
@@ -16,7 +18,7 @@ var flightRepository = new FlightRepository();
 var bookingRepository = new BookingRepository();
 
 var passwordHasher = new Sha256PasswordHasher();
-var currentUserService = new CurrentUserService();
+var currentUserService = new CurrentUserSession();
 
 var managerSeeder = new ManagerSeeder(userRepository, passwordHasher);
 await managerSeeder.SeedAsync();
@@ -37,17 +39,37 @@ var bookingService = new BookingService(
 
 var csvFlightImportService = new CsvFlightImportService(flightRepository);
 var validationMetadataService = new FlightValidationMetadataService();
+var managerFlightImportHandler =new ManagerFlightImportHandler(csvFlightImportService);
+var managerValidationRulesHandler =new ManagerValidationRulesHandler(validationMetadataService);
+var managerBookingFilterHandler =new ManagerBookingFilterHandler(bookingService);
+
+var passengerFlightSearchHandler = new PassengerFlightSearchHandler(flightService);
+var passengerBookingHandler = new PassengerBookingHandler(bookingService);
+var passengerBookingCancellationHandler = new PassengerBookingCancellationHandler(bookingService);
+var passengerBookingViewerHandler = new PassengerBookingViewerHandler(bookingService);
+var passengerAvailableFlightsHandler = new PassengerAvailableFlightsHandler(flightService, passengerBookingHandler);
+var passengerSearchAndBookHandler = new PassengerSearchAndBookHandler(passengerFlightSearchHandler,passengerBookingHandler);
+var passengerFlightGrouper = new PassengerFlightGrouper();
+var passengerBookingModificationWorkflow = new PassengerBookingModificationHandler(
+        bookingService,
+        flightService,
+        passengerFlightSearchHandler,
+        passengerFlightGrouper);
 
 var passengerMenu = new PassengerMenu(
-    flightService,
-    bookingService,
-    authService);
+    authService,
+    passengerBookingCancellationHandler,
+    passengerBookingViewerHandler,
+    passengerAvailableFlightsHandler,
+    passengerSearchAndBookHandler,
+    passengerFlightGrouper,
+    passengerBookingModificationWorkflow);
 
 var managerMenu = new ManagerMenu(
-    csvFlightImportService,
-    validationMetadataService,
-    bookingService,
-    authService);
+    authService,
+    managerFlightImportHandler,
+    managerValidationRulesHandler,
+     managerBookingFilterHandler);
 
 var mainMenu = new MainMenu(
     authService,

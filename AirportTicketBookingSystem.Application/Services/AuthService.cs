@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
 
 using AirportTicketBookingSystem.Application.Abstractions.Repositories;
 using AirportTicketBookingSystem.Application.Abstractions.Services;
@@ -16,13 +14,13 @@ namespace AirportTicketBookingSystem.Application.Services
         private readonly IUserRepository _userRepository;
         private readonly IPassengerProfileRepository _passengerProfileRepository;
         private readonly IPasswordHasher _passwordHasher;
-        private readonly ICurrentUserService _currentUserService;
+        private readonly ICurrentUserSession _currentUserService;
 
         public AuthService(
             IUserRepository userRepository,
             IPassengerProfileRepository passengerProfileRepository,
             IPasswordHasher passwordHasher,
-            ICurrentUserService currentUserService)
+            ICurrentUserSession currentUserService)
         {
             _userRepository = userRepository;
             _passengerProfileRepository = passengerProfileRepository;

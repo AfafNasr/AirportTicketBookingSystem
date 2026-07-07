@@ -1,6 +1,7 @@
 ﻿using AirportTicketBookingSystem.Application.Abstractions.Repositories;
 using AirportTicketBookingSystem.Application.DTOs.Flights;
 using AirportTicketBookingSystem.Domain.Entities;
+using AirportTicketBookingSystem.Application.Helpers;
 
 namespace AirportTicketBookingSystem.Application.Services;
 
@@ -37,9 +38,9 @@ public sealed class CsvFlightImportService
         for (var i = 1; i < lines.Length; i++)
         {
             var rowNumber = i + 1;
-            var columns = lines[i].Split(',');
+            var columns = CsvRowParser.ParseLine(lines[i]);
 
-            if (columns.Length != 13)
+            if (columns.Count != 13)
             {
                 AddError(result, rowNumber, "Row", "Invalid column count. Expected 13 columns.");
                 continue;

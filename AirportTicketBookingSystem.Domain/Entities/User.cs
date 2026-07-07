@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
 
 using AirportTicketBookingSystem.Domain.Common;
 using AirportTicketBookingSystem.Domain.Enums;
@@ -16,7 +14,7 @@ namespace AirportTicketBookingSystem.Domain.Entities
 
         private User()
         {
-            FullName = string.Empty;
+            FullName = string.Empty; 
             Email = string.Empty;
             PasswordHash = string.Empty;
         }

@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
 
 using AirportTicketBookingSystem.Application.Abstractions.Services;
 using AirportTicketBookingSystem.Domain.Enums;
 
 namespace AirportTicketBookingSystem.ConsoleApp.Session
 {
-    public sealed class CurrentUserService : ICurrentUserService
+    public sealed class CurrentUserSession : ICurrentUserSession
     {
         public Guid? UserId { get; private set; }
         public string? Email { get; private set; }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
 
 using AirportTicketBookingSystem.Application.Abstractions.Repositories;
 using AirportTicketBookingSystem.Domain.Entities;
@@ -9,7 +7,7 @@ namespace AirportTicketBookingSystem.Infrastructure.Persistence
 {
     public sealed class UserRepository : JsonFileRepository<User>, IUserRepository
     {
-        public UserRepository() : base("Users.json")
+        public UserRepository() : base(DataFileNames.Users)
         {
         }
 

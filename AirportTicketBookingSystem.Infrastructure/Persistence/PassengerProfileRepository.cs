@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
 
 using AirportTicketBookingSystem.Application.Abstractions.Repositories;
 using AirportTicketBookingSystem.Domain.Entities;
@@ -10,7 +8,7 @@ namespace AirportTicketBookingSystem.Infrastructure.Persistence
     public sealed class PassengerProfileRepository
     : JsonFileRepository<PassengerProfile>, IPassengerProfileRepository
     {
-        public PassengerProfileRepository() : base("PassengerProfiles.json")
+        public PassengerProfileRepository() : base(DataFileNames.PassengerProfiles)
         {
         }
 
