@@ -17,7 +17,7 @@ public sealed class PassengerMenu
     private readonly PassengerFlightGrouper _flightGrouper;
     private readonly PassengerBookingModificationHandler _bookingModificationHandler;
     public PassengerMenu(
-       
+   
         AuthService authService,
         PassengerBookingCancellationHandler bookingCancellationHandler,
         PassengerBookingViewerHandler bookingViewerHandler,
@@ -26,7 +26,7 @@ public sealed class PassengerMenu
         PassengerFlightGrouper flightGrouper,
         PassengerBookingModificationHandler bookingModificationHandler)
     {
-        
+    
         _authService = authService;
         _bookingCancellationHandler = bookingCancellationHandler;
         _bookingViewerHandler = bookingViewerHandler;

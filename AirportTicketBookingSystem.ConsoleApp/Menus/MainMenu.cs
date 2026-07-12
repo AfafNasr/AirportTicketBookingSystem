@@ -1,108 +1,105 @@
-﻿
-
-using AirportTicketBookingSystem.Application.DTOs.Auth;
+﻿using AirportTicketBookingSystem.Application.DTOs.Auth;
 using AirportTicketBookingSystem.Application.Services;
 using AirportTicketBookingSystem.ConsoleApp.Input;
 using AirportTicketBookingSystem.Domain.Enums;
 
-namespace AirportTicketBookingSystem.ConsoleApp.Menus
+namespace AirportTicketBookingSystem.ConsoleApp.Menus;
+
+public sealed class MainMenu
 {
-    public sealed class MainMenu
+    private readonly AuthService _authService;
+    private readonly PassengerMenu _passengerMenu;
+    private readonly ManagerMenu _managerMenu;
+
+    public MainMenu(
+        AuthService authService,
+        PassengerMenu passengerMenu,
+        ManagerMenu managerMenu)
     {
-        private readonly AuthService _authService;
-        private readonly PassengerMenu _passengerMenu;
-        private readonly ManagerMenu _managerMenu;
+        _authService = authService;
+        _passengerMenu = passengerMenu;
+        _managerMenu = managerMenu;
+    }
 
-        public MainMenu(
-            AuthService authService,
-            PassengerMenu passengerMenu,
-            ManagerMenu managerMenu)
+    public async Task ShowAsync()
+    {
+        while (true)
         {
-            _authService = authService;
-            _passengerMenu = passengerMenu;
-            _managerMenu = managerMenu;
-        }
+            ConsoleUi.Header("AIRPORT TICKET BOOKING SYSTEM");
 
-        public async Task ShowAsync()
-        {
-            while (true)
+            Console.WriteLine("1. Login");
+            Console.WriteLine("2. Register as Passenger");
+            Console.WriteLine("3. Exit");
+            Console.WriteLine();
+
+            var choice = ConsoleUi.Prompt("Choose option");
+
+            switch (choice)
             {
-                ConsoleUi.Header("AIRPORT TICKET BOOKING SYSTEM");
+                case "1":
+                    await LoginAsync();
+                    break;
 
-                Console.WriteLine("1. Login");
-                Console.WriteLine("2. Register as Passenger");
-                Console.WriteLine("3. Exit");
-                Console.WriteLine();
+                case "2":
+                    await RegisterAsync();
+                    break;
 
-                var choice = ConsoleUi.Prompt("Choose option");
+                case "3":
+                    return;
 
-                switch (choice)
-                {
-                    case "1":
-                        await LoginAsync();
-                        break;
-
-                    case "2":
-                        await RegisterAsync();
-                        break;
-
-                    case "3":
-                        return;
-
-                    default:
-                        ConsoleUi.Error("Invalid option.");
-                        ConsoleUi.Pause();
-                        break;
-                }
+                default:
+                    ConsoleUi.Error("Invalid option.");
+                    ConsoleUi.Pause();
+                    break;
             }
         }
+    }
 
-        private async Task LoginAsync()
+    private async Task LoginAsync()
+    {
+        ConsoleUi.Header("LOGIN");
+
+        var result = await _authService.LoginAsync(new LoginRequest
         {
-            ConsoleUi.Header("LOGIN");
+            Email = ConsoleUi.Prompt("Email"),
+            Password = ConsoleUi.Prompt("Password")
+        });
 
-            var result = await _authService.LoginAsync(new LoginRequest
-            {
-                Email = ConsoleUi.Prompt("Email"),
-                Password = ConsoleUi.Prompt("Password")
-            });
-
-            if (result.IsFailure)
-            {
-                ConsoleUi.Error(result.Error);
-                ConsoleUi.Pause();
-                return;
-            }
-
-            ConsoleUi.Success($"Welcome, {result.Value!.FullName}");
-
-            if (result.Value.Role == UserRole.Passenger)
-                await _passengerMenu.ShowAsync();
-            else
-                await _managerMenu.ShowAsync();
+        if (result.IsFailure)
+        {
+            ConsoleUi.Error(result.Error);
+            ConsoleUi.Pause();
+            return;
         }
 
-        private async Task RegisterAsync()
-        {
-            ConsoleUi.Header("PASSENGER REGISTRATION");
+        ConsoleUi.Success($"Welcome, {result.Value!.FullName}");
 
-            var result = await _authService.RegisterPassengerAsync(new RegisterPassengerRequest
-            {
-                FullName = ConsoleUi.Prompt("Full Name"),
-                Email = ConsoleUi.Prompt("Email"),
-                Password = ConsoleUi.Prompt("Password"),
-                PassportNumber = ConsoleUi.Prompt("Passport Number")
-            });
-
-            if (result.IsFailure)
-            {
-                ConsoleUi.Error(result.Error);
-                ConsoleUi.Pause();
-                return;
-            }
-
-            ConsoleUi.Success("Registration completed successfully.");
+        if (result.Value.Role == UserRole.Passenger)
             await _passengerMenu.ShowAsync();
+        else
+            await _managerMenu.ShowAsync();
+    }
+
+    private async Task RegisterAsync()
+    {
+        ConsoleUi.Header("PASSENGER REGISTRATION");
+
+        var result = await _authService.RegisterPassengerAsync(new RegisterPassengerRequest
+        {
+            FullName = ConsoleUi.Prompt("Full Name"),
+            Email = ConsoleUi.Prompt("Email"),
+            Password = ConsoleUi.Prompt("Password"),
+            PassportNumber = ConsoleUi.Prompt("Passport Number")
+        });
+
+        if (result.IsFailure)
+        {
+            ConsoleUi.Error(result.Error);
+            ConsoleUi.Pause();
+            return;
         }
+
+        ConsoleUi.Success("Registration completed successfully.");
+        await _passengerMenu.ShowAsync();
     }
 }

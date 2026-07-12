@@ -1,12 +1,9 @@
-﻿
+﻿using AirportTicketBookingSystem.Domain.Enums;
 
-using AirportTicketBookingSystem.Domain.Enums;
+namespace AirportTicketBookingSystem.Application.DTOs.Bookings;
 
-namespace AirportTicketBookingSystem.Application.DTOs.Bookings
+public sealed class BookFlightRequest
 {
-    public sealed class BookFlightRequest
-    {
-        public Guid FlightId { get; set; }
-        public TravelClass TravelClass { get; set; }
-    }
+    public Guid FlightId { get; set; }
+    public TravelClass TravelClass { get; set; }
 }

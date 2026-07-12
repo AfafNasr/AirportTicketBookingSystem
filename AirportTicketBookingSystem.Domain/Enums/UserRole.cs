@@ -1,10 +1,7 @@
-﻿
+﻿namespace AirportTicketBookingSystem.Domain.Enums;
 
-namespace AirportTicketBookingSystem.Domain.Enums
+public enum UserRole
 {
-    public enum UserRole
-    {
-        Passenger = 1,
-        Manager = 2
-    }
+    Passenger = 1,
+    Manager = 2
 }

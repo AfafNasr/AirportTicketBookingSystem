@@ -1,11 +1,8 @@
-﻿
+﻿namespace AirportTicketBookingSystem.Application.DTOs.Flights;
 
-namespace AirportTicketBookingSystem.Application.DTOs.Flights
+public sealed class FlightImportError
 {
-    public sealed class FlightImportError
-    {
-        public int RowNumber { get; set; }
-        public string FieldName { get; set; } = string.Empty;
-        public string ErrorMessage { get; set; } = string.Empty;
-    }
+    public int RowNumber { get; set; }
+    public string FieldName { get; set; } = string.Empty;
+    public string ErrorMessage { get; set; } = string.Empty;
 }

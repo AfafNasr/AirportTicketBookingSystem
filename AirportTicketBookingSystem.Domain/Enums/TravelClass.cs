@@ -1,11 +1,8 @@
-﻿
+﻿namespace AirportTicketBookingSystem.Domain.Enums;
 
-namespace AirportTicketBookingSystem.Domain.Enums
+public enum TravelClass
 {
-    public enum TravelClass
-    {
-        Economy = 1,
-        Business = 2,
-        FirstClass = 3
-    }
+    Economy = 1,
+    Business = 2,
+    FirstClass = 3
 }

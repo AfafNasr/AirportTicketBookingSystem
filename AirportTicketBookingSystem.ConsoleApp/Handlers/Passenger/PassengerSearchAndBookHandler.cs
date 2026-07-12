@@ -1,37 +1,36 @@
 ﻿using AirportTicketBookingSystem.Application.DTOs.Flights;
 using AirportTicketBookingSystem.ConsoleApp.Input;
 
-namespace AirportTicketBookingSystem.ConsoleApp.Workflows.Passenger
+namespace AirportTicketBookingSystem.ConsoleApp.Workflows.Passenger;
+
+public sealed class PassengerSearchAndBookHandler
 {
-    public sealed class PassengerSearchAndBookHandler
+    private readonly PassengerFlightSearchHandler _flightSearchWorkflow;
+    private readonly PassengerBookingHandler _bookingWorkflow;
+
+    public PassengerSearchAndBookHandler(
+        PassengerFlightSearchHandler flightSearchWorkflow,
+        PassengerBookingHandler bookingWorkflow)
     {
-        private readonly PassengerFlightSearchHandler _flightSearchWorkflow;
-        private readonly PassengerBookingHandler _bookingWorkflow;
+        _flightSearchWorkflow = flightSearchWorkflow;
+        _bookingWorkflow = bookingWorkflow;
+    }
 
-        public PassengerSearchAndBookHandler(
-            PassengerFlightSearchHandler flightSearchWorkflow,
-            PassengerBookingHandler bookingWorkflow)
+    public async Task SearchAndBookFlightAsync(Action<IReadOnlyList<FlightSearchResult>> printFlights)
+    {
+        ConsoleUi.Header("SEARCH & BOOK FLIGHT");
+
+        var flights = await _flightSearchWorkflow.SearchFlightsWithoutPauseAsync();
+
+        printFlights(flights);
+
+        if (flights.Count == 0)
         {
-            _flightSearchWorkflow = flightSearchWorkflow;
-            _bookingWorkflow = bookingWorkflow;
+            ConsoleUi.Error("No available flights found.");
+            ConsoleUi.Pause();
+            return;
         }
 
-        public async Task SearchAndBookFlightAsync(Action<IReadOnlyList<FlightSearchResult>> printFlights)
-        {
-            ConsoleUi.Header("SEARCH & BOOK FLIGHT");
-
-            var flights = await _flightSearchWorkflow.SearchFlightsWithoutPauseAsync();
-
-            printFlights(flights);
-
-            if (flights.Count == 0)
-            {
-                ConsoleUi.Error("No available flights found.");
-                ConsoleUi.Pause();
-                return;
-            }
-
-            await _bookingWorkflow.BookSelectedFlightAsync(flights);
-        }
+        await _bookingWorkflow.BookSelectedFlightAsync(flights);
     }
 }

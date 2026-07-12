@@ -1,69 +1,67 @@
-﻿
-using AirportTicketBookingSystem.Application.Services;
+﻿using AirportTicketBookingSystem.Application.Services;
 using AirportTicketBookingSystem.ConsoleApp.Input;
 using AirportTicketBookingSystem.ConsoleApp.Handlers.Manager;
 
-namespace AirportTicketBookingSystem.ConsoleApp.Menus
+namespace AirportTicketBookingSystem.ConsoleApp.Menus;
+
+public sealed class ManagerMenu
 {
-    public sealed class ManagerMenu
+    private readonly AuthService _authService;
+    private readonly ManagerFlightImportHandler _flightImportHandler;
+    private readonly ManagerValidationRulesHandler _validationRulesHandler;
+    private readonly ManagerBookingFilterHandler _bookingFilterHandler;
+
+    public ManagerMenu(
+        AuthService authService,
+        ManagerFlightImportHandler flightImportHandler,
+        ManagerValidationRulesHandler validationRulesHandler,
+        ManagerBookingFilterHandler bookingFilterHandler)
     {
-        private readonly AuthService _authService;
-        private readonly ManagerFlightImportHandler _flightImportHandler;
-        private readonly ManagerValidationRulesHandler _validationRulesHandler;
-        private readonly ManagerBookingFilterHandler _bookingFilterHandler;
+        _authService = authService;
+        _flightImportHandler = flightImportHandler;
+        _validationRulesHandler = validationRulesHandler;
+        _bookingFilterHandler = bookingFilterHandler;
+    }
 
-        public ManagerMenu(
-            AuthService authService,
-            ManagerFlightImportHandler flightImportHandler,
-            ManagerValidationRulesHandler validationRulesHandler,
-            ManagerBookingFilterHandler bookingFilterHandler)
+    public async Task ShowAsync()
+    {
+        while (true)
         {
-            _authService = authService;
-            _flightImportHandler = flightImportHandler;
-            _validationRulesHandler = validationRulesHandler;
-            _bookingFilterHandler = bookingFilterHandler;
-        }
+            ConsoleUi.Header("MANAGER MENU");
 
-        public async Task ShowAsync()
-        {
-            while (true)
+            Console.WriteLine("1. Import Flights From CSV");
+            Console.WriteLine("2. View Flight Validation Rules");
+            Console.WriteLine("3. Filter Bookings");
+            Console.WriteLine("4. Logout");
+            Console.WriteLine();
+
+            var choice = ConsoleUi.Prompt("Choose option");
+
+            switch (choice)
             {
-                ConsoleUi.Header("MANAGER MENU");
+                case "1":
+                    await _flightImportHandler.ImportFlightsAsync();
+                    break;
 
-                Console.WriteLine("1. Import Flights From CSV");
-                Console.WriteLine("2. View Flight Validation Rules");
-                Console.WriteLine("3. Filter Bookings");
-                Console.WriteLine("4. Logout");
-                Console.WriteLine();
+                case "2":
+                    _validationRulesHandler.ViewValidationRules();
+                    break;
 
-                var choice = ConsoleUi.Prompt("Choose option");
+                case "3":
+                    await _bookingFilterHandler.FilterBookingsAsync();
+                    break;
 
-                switch (choice)
-                {
-                    case "1":
-                        await _flightImportHandler.ImportFlightsAsync();
-                        break;
+                case "4":
+                    _authService.Logout();
+                    return;
 
-                    case "2":
-                        _validationRulesHandler.ViewValidationRules();
-                        break;
-
-                    case "3":
-                        await _bookingFilterHandler.FilterBookingsAsync();
-                        break;
-
-                    case "4":
-                        _authService.Logout();
-                        return;
-
-                    default:
-                        ConsoleUi.Error("Invalid option.");
-                        ConsoleUi.Pause();
-                        break;
-                }
+                default:
+                    ConsoleUi.Error("Invalid option.");
+                    ConsoleUi.Pause();
+                    break;
             }
         }
-
-       
     }
+
+   
 }

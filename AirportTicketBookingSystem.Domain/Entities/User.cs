@@ -1,30 +1,27 @@
-﻿
-
-using AirportTicketBookingSystem.Domain.Common;
+﻿using AirportTicketBookingSystem.Domain.Common;
 using AirportTicketBookingSystem.Domain.Enums;
 
-namespace AirportTicketBookingSystem.Domain.Entities
+namespace AirportTicketBookingSystem.Domain.Entities;
+
+public sealed class User : Entity
 {
-    public sealed class User : Entity
+    public string FullName { get; private set; }
+    public string Email { get; private set; }
+    public string PasswordHash { get; private set; }
+    public UserRole Role { get; private set; }
+
+    private User()
     {
-        public string FullName { get; private set; }
-        public string Email { get; private set; }
-        public string PasswordHash { get; private set; }
-        public UserRole Role { get; private set; }
+        FullName = string.Empty; 
+        Email = string.Empty;
+        PasswordHash = string.Empty;
+    }
 
-        private User()
-        {
-            FullName = string.Empty; 
-            Email = string.Empty;
-            PasswordHash = string.Empty;
-        }
-
-        public User(string fullName, string email, string passwordHash, UserRole role)
-        {
-            FullName = fullName;
-            Email = email;
-            PasswordHash = passwordHash;
-            Role = role;
-        }
+    public User(string fullName, string email, string passwordHash, UserRole role)
+    {
+        FullName = fullName;
+        Email = email;
+        PasswordHash = passwordHash;
+        Role = role;
     }
 }

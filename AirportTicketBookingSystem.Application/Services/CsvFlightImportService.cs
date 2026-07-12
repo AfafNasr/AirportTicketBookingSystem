@@ -1,7 +1,7 @@
 ﻿using AirportTicketBookingSystem.Application.Abstractions.Repositories;
 using AirportTicketBookingSystem.Application.DTOs.Flights;
-using AirportTicketBookingSystem.Domain.Entities;
 using AirportTicketBookingSystem.Application.Helpers;
+using AirportTicketBookingSystem.Domain.Entities;
 
 namespace AirportTicketBookingSystem.Application.Services;
 

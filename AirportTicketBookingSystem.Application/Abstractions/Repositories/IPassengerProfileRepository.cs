@@ -1,13 +1,10 @@
-﻿
+﻿using AirportTicketBookingSystem.Domain.Entities;
 
-using AirportTicketBookingSystem.Domain.Entities;
+namespace AirportTicketBookingSystem.Application.Abstractions.Repositories;
 
-namespace AirportTicketBookingSystem.Application.Abstractions.Repositories
+public interface IPassengerProfileRepository
 {
-    public interface IPassengerProfileRepository
-    {
-        Task<IReadOnlyList<PassengerProfile>> GetAllAsync();
-        Task<PassengerProfile?> GetByUserIdAsync(Guid userId);
-        Task AddAsync(PassengerProfile passengerProfile);
-    }
+    Task<IReadOnlyList<PassengerProfile>> GetAllAsync();
+    Task<PassengerProfile?> GetByUserIdAsync(Guid userId);
+    Task AddAsync(PassengerProfile passengerProfile);
 }

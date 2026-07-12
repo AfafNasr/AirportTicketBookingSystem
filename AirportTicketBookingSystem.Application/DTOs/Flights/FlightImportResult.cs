@@ -1,12 +1,9 @@
-﻿
+﻿namespace AirportTicketBookingSystem.Application.DTOs.Flights;
 
-namespace AirportTicketBookingSystem.Application.DTOs.Flights
+public sealed class FlightImportResult
 {
-    public sealed class FlightImportResult
-    {
-        public int ImportedCount { get; set; }
-        public List<FlightImportError> Errors { get; set; } = [];
+    public int ImportedCount { get; set; }
+    public List<FlightImportError> Errors { get; set; } = [];
 
-        public bool HasErrors => Errors.Count > 0;
-    }
+    public bool HasErrors => Errors.Count > 0;
 }

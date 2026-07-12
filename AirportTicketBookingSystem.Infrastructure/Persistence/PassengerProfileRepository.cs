@@ -1,36 +1,33 @@
-﻿
-
-using AirportTicketBookingSystem.Application.Abstractions.Repositories;
+﻿using AirportTicketBookingSystem.Application.Abstractions.Repositories;
 using AirportTicketBookingSystem.Domain.Entities;
 
-namespace AirportTicketBookingSystem.Infrastructure.Persistence
+namespace AirportTicketBookingSystem.Infrastructure.Persistence;
+
+public sealed class PassengerProfileRepository
+: JsonFileRepository<PassengerProfile>, IPassengerProfileRepository
 {
-    public sealed class PassengerProfileRepository
-    : JsonFileRepository<PassengerProfile>, IPassengerProfileRepository
+    public PassengerProfileRepository() : base(DataFileNames.PassengerProfiles)
     {
-        public PassengerProfileRepository() : base(DataFileNames.PassengerProfiles)
-        {
-        }
+    }
 
-        public async Task<IReadOnlyList<PassengerProfile>> GetAllAsync()
-        {
-            return await ReadAllAsync();
-        }
+    public async Task<IReadOnlyList<PassengerProfile>> GetAllAsync()
+    {
+        return await ReadAllAsync();
+    }
 
-        public async Task<PassengerProfile?> GetByUserIdAsync(Guid userId)
-        {
-            var profiles = await ReadAllAsync();
+    public async Task<PassengerProfile?> GetByUserIdAsync(Guid userId)
+    {
+        var profiles = await ReadAllAsync();
 
-            return profiles.FirstOrDefault(profile => profile.UserId == userId);
-        }
+        return profiles.FirstOrDefault(profile => profile.UserId == userId);
+    }
 
-        public async Task AddAsync(PassengerProfile passengerProfile)
-        {
-            var profiles = (await ReadAllAsync()).ToList();
+    public async Task AddAsync(PassengerProfile passengerProfile)
+    {
+        var profiles = (await ReadAllAsync()).ToList();
 
-            profiles.Add(passengerProfile);
+        profiles.Add(passengerProfile);
 
-            await WriteAllAsync(profiles);
-        }
+        await WriteAllAsync(profiles);
     }
 }

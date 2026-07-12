@@ -1,10 +1,7 @@
-﻿
+﻿namespace AirportTicketBookingSystem.Domain.Enums;
 
-namespace AirportTicketBookingSystem.Domain.Enums
+public enum BookingStatus
 {
-    public enum BookingStatus
-    {
-        Active = 1,
-        Cancelled = 2
-    }
+    Active = 1,
+    Cancelled = 2
 }

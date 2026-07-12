@@ -1,59 +1,57 @@
-﻿
-using AirportTicketBookingSystem.Application.Services;
+﻿using AirportTicketBookingSystem.Application.Services;
 using AirportTicketBookingSystem.ConsoleApp.Input;
 
-namespace AirportTicketBookingSystem.ConsoleApp.Handlers.Manager
+namespace AirportTicketBookingSystem.ConsoleApp.Handlers.Manager;
+
+public sealed class ManagerFlightImportHandler
 {
-    public sealed class ManagerFlightImportHandler
+    private readonly CsvFlightImportService _csvFlightImportService;
+
+    public ManagerFlightImportHandler(CsvFlightImportService csvFlightImportService)
     {
-        private readonly CsvFlightImportService _csvFlightImportService;
+        _csvFlightImportService = csvFlightImportService;
+    }
 
-        public ManagerFlightImportHandler(CsvFlightImportService csvFlightImportService)
+    public async Task ImportFlightsAsync()
+    {
+        ConsoleUi.Header("IMPORT FLIGHTS FROM CSV");
+
+        var filePath = ConsoleUi.Prompt("CSV File Path");
+
+        var result = await _csvFlightImportService.ImportAsync(filePath);
+
+        Console.WriteLine();
+        ConsoleUi.Success($"Imported Flights: {result.ImportedCount}");
+
+        if (result.HasErrors)
         {
-            _csvFlightImportService = csvFlightImportService;
-        }
+            ConsoleUi.Section("Validation Errors");
 
-        public async Task ImportFlightsAsync()
-        {
-            ConsoleUi.Header("IMPORT FLIGHTS FROM CSV");
+            var errorsByRow = result.Errors
+                .GroupBy(error => error.RowNumber)
+                .OrderBy(group => group.Key);
 
-            var filePath = ConsoleUi.Prompt("CSV File Path");
-
-            var result = await _csvFlightImportService.ImportAsync(filePath);
-
-            Console.WriteLine();
-            ConsoleUi.Success($"Imported Flights: {result.ImportedCount}");
-
-            if (result.HasErrors)
+            foreach (var rowGroup in errorsByRow)
             {
-                ConsoleUi.Section("Validation Errors");
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine($"Row {rowGroup.Key}");
+                Console.ResetColor();
 
-                var errorsByRow = result.Errors
-                    .GroupBy(error => error.RowNumber)
-                    .OrderBy(group => group.Key);
+                Console.WriteLine(new string('-', 50));
 
-                foreach (var rowGroup in errorsByRow)
+                foreach (var error in rowGroup)
                 {
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.WriteLine($"Row {rowGroup.Key}");
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.Write($"{error.FieldName}: ");
                     Console.ResetColor();
 
-                    Console.WriteLine(new string('-', 50));
-
-                    foreach (var error in rowGroup)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.Write($"{error.FieldName}: ");
-                        Console.ResetColor();
-
-                        Console.WriteLine(error.ErrorMessage);
-                    }
-
-                    Console.WriteLine();
+                    Console.WriteLine(error.ErrorMessage);
                 }
-            }
 
-            ConsoleUi.Pause();
+                Console.WriteLine();
+            }
         }
+
+        ConsoleUi.Pause();
     }
 }

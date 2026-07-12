@@ -1,23 +1,20 @@
-﻿
+﻿using AirportTicketBookingSystem.Domain.Common;
 
-using AirportTicketBookingSystem.Domain.Common;
+namespace AirportTicketBookingSystem.Domain.Entities;
 
-namespace AirportTicketBookingSystem.Domain.Entities
+public sealed class PassengerProfile : Entity
 {
-    public sealed class PassengerProfile : Entity
+    public Guid UserId { get;  set; }
+    public string PassportNumber { get; private set; }
+
+    private PassengerProfile()
     {
-        public Guid UserId { get;  set; }
-        public string PassportNumber { get; private set; }
+        PassportNumber = string.Empty;
+    }
 
-        private PassengerProfile()
-        {
-            PassportNumber = string.Empty;
-        }
-
-        public PassengerProfile(Guid userId, string passportNumber)
-        {
-            UserId = userId;
-            PassportNumber = passportNumber;
-        }
+    public PassengerProfile(Guid userId, string passportNumber)
+    {
+        UserId = userId;
+        PassportNumber = passportNumber;
     }
 }

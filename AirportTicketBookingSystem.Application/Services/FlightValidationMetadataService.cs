@@ -1,9 +1,9 @@
 ﻿
 
-using System.Reflection;
-using System.Text.RegularExpressions;
 using AirportTicketBookingSystem.Application.DTOs.Flights;
 using AirportTicketBookingSystem.Domain.Entities;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace AirportTicketBookingSystem.Application.Services
 {
@@ -90,11 +90,12 @@ namespace AirportTicketBookingSystem.Application.Services
         {
             return typeof(Flight)
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(property => property.Name != "Id") 
-                .Select(property => {
+                .Where(property => property.Name != "Id")
+                .Select(property =>
+                {
                     var constraints = new List<string>();
 
-                   
+
                     if (property.PropertyType == typeof(int) || property.PropertyType == typeof(decimal))
                     {
                         constraints.Add("Required");
@@ -105,7 +106,7 @@ namespace AirportTicketBookingSystem.Application.Services
                         constraints.Add("Required");
                     }
 
-                
+
                     if (ConstraintsByPropertyName.TryGetValue(property.Name, out var advancedConstraints))
                     {
                         foreach (var constraint in advancedConstraints)

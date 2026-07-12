@@ -2,42 +2,41 @@
 using AirportTicketBookingSystem.Application.Services;
 using AirportTicketBookingSystem.ConsoleApp.Input;
 
-namespace AirportTicketBookingSystem.ConsoleApp.Workflows.Passenger
+namespace AirportTicketBookingSystem.ConsoleApp.Workflows.Passenger;
+
+public sealed class PassengerAvailableFlightsHandler
 {
-    public sealed class PassengerAvailableFlightsHandler
+    private readonly FlightService _flightService;
+    private readonly PassengerBookingHandler _bookingWorkflow;
+
+    public PassengerAvailableFlightsHandler(
+        FlightService flightService,
+        PassengerBookingHandler bookingWorkflow)
     {
-        private readonly FlightService _flightService;
-        private readonly PassengerBookingHandler _bookingWorkflow;
+        _flightService = flightService;
+        _bookingWorkflow = bookingWorkflow;
+    }
 
-        public PassengerAvailableFlightsHandler(
-            FlightService flightService,
-            PassengerBookingHandler bookingWorkflow)
+    public async Task ViewAllAvailableFlightsAsync(Action<IReadOnlyList<FlightSearchResult>> printFlights)
+    {
+        ConsoleUi.Header("ALL AVAILABLE FLIGHTS");
+
+        var flights = await _flightService.SearchAvailableFlightsAsync(
+            new FlightSearchRequest());
+
+        printFlights(flights);
+
+        if (flights.Count == 0)
         {
-            _flightService = flightService;
-            _bookingWorkflow = bookingWorkflow;
+            ConsoleUi.Pause();
+            return;
         }
 
-        public async Task ViewAllAvailableFlightsAsync(Action<IReadOnlyList<FlightSearchResult>> printFlights)
-        {
-            ConsoleUi.Header("ALL AVAILABLE FLIGHTS");
+        var answer = ConsoleUi.Prompt("Do you want to book one of these flights? (Y/N)");
 
-            var flights = await _flightService.SearchAvailableFlightsAsync(
-                new FlightSearchRequest());
+        if (!answer.Equals("Y", StringComparison.OrdinalIgnoreCase))
+            return;
 
-            printFlights(flights);
-
-            if (flights.Count == 0)
-            {
-                ConsoleUi.Pause();
-                return;
-            }
-
-            var answer = ConsoleUi.Prompt("Do you want to book one of these flights? (Y/N)");
-
-            if (!answer.Equals("Y", StringComparison.OrdinalIgnoreCase))
-                return;
-
-            await _bookingWorkflow.BookSelectedFlightAsync(flights);
-        }
+        await _bookingWorkflow.BookSelectedFlightAsync(flights);
     }
 }
