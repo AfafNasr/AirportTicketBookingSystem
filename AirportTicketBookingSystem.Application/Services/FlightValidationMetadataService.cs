@@ -1,6 +1,4 @@
-﻿
-
-using AirportTicketBookingSystem.Application.DTOs.Flights;
+﻿using AirportTicketBookingSystem.Application.DTOs.Flights;
 using AirportTicketBookingSystem.Domain.Entities;
 using System.Reflection;
 using System.Text.RegularExpressions;
